@@ -3,95 +3,145 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Investment Indicators Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>RhoZero</title>
   <style>
-    :root {
-      --bg: #0d1117;
-      --card: #161b22;
-      --border: #30363d;
-      --text: #e6edf3;
-      --text-muted: #8b949e;
-      --accent: #58a6ff;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0f;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-    header { margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
-    h1 { color: var(--accent); }
-    .updated { color: var(--text-muted); font-size: 0.875rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
-    h2 { font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
-    th { color: var(--text-muted); font-weight: 500; }
-    .commentary { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
-    .commentary p { font-size: 1.1rem; }
-    .chart-container { height: 300px; }
-    footer { margin-top: 2rem; text-align: center; color: var(--text-muted); font-size: 0.75rem; }
+
+    .container {
+      text-align: center;
+      padding: 40px;
+      max-width: 600px;
+    }
+
+    .logo {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tagline {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 48px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 6px 16px;
+      border: 1px solid #3a3a4a;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 40px;
+    }
+
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .link-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      background: #111118;
+      border: 1px solid #1e1e2a;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #e0e0e0;
+      transition: all 0.2s ease;
+    }
+
+    .link-card:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.1);
+    }
+
+    .link-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .link-icon {
+      font-size: 24px;
+    }
+
+    .link-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .link-desc {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .link-arrow {
+      color: #444;
+      font-size: 18px;
+    }
+
+    .footer {
+      margin-top: 48px;
+      font-size: 11px;
+      color: #333;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <header>
-      <h1>Investment Indicators</h1>
-      <p class="updated">Last updated: 2026-04-21T22:33:37.578931</p>
-    </header>
-    
-    <div class="grid">
-      <div class="card">
-        <h2>Current Values</h2>
-        <table>
-          <thead><tr><th>Indicator</th><th>Value</th><th>Date</th></tr></thead>
-          <tbody><tr><td>SOFR</td><td>3.63% (363bp)</td><td>2026-04-20</td></tr>
-<tr><td>TED</td><td>0.09% (9bp)</td><td>2022-01-21</td></tr>
-<tr><td>DXY</td><td>118.08</td><td>2026-04-17</td></tr>
-<tr><td>T10Y2Y</td><td>0.54% (54bp)</td><td>2026-04-20</td></tr>
-<tr><td>WALCL</td><td>$6705.7B</td><td>2026-04-15</td></tr>
-<tr><td>RRP</td><td>$0.5B</td><td>2026-04-20</td></tr>
-<tr><td>TGA</td><td>$751.4B</td><td>2026-04-15</td></tr>
-<tr><td>M2</td><td>$22.7T</td><td>2026-02-01</td></tr>
-<tr><td>NetLiquidity</td><td>$5954.3B</td><td>2026-04-15</td></tr></tbody>
-        </table>
-      </div>
-      
-      <div class="card">
-        <h2>Charts</h2>
-        <div class="chart-container">
-          <canvas id="mainChart"></canvas>
+    <div class="logo">RhoZero</div>
+    <div class="tagline">Investment Intelligence</div>
+    <div class="status">⚙ Under Construction</div>
+
+    <div class="links">
+      <a href="dollar-liquidity-weekly-report/" class="link-card">
+        <div class="link-left">
+          <span class="link-icon">📊</span>
+          <div>
+            <div class="link-title">Dollar Liquidity Weekly Report</div>
+            <div class="link-desc">Weekly liquidity analysis · L1–L5 rating system</div>
+          </div>
         </div>
-      </div>
+        <span class="link-arrow">→</span>
+      </a>
+
+      <a href="implementation/" class="link-card">
+        <div class="link-left">
+          <span class="link-icon">🖥</span>
+          <div>
+            <div class="link-title">Implementation Dashboard</div>
+            <div class="link-desc">Daily indicators · AI commentary · Chart.js</div>
+          </div>
+        </div>
+        <span class="link-arrow">→</span>
+      </a>
     </div>
-    
-    <div class="commentary">
-      <h2>AI Commentary</h2>
-      <p>The firm SOFR at 3.63 % and a strong DXY (≈118) point to a risk‑off tone, as tighter monetary policy and a stronger dollar temper risk appetite even though the low TED spread and a positive T10Y2Y indicate limited credit stress. At the same time, the Fed’s balance sheet near $6.7 trillion, a net liquidity figure around $5.9 trillion, and an elevated M2 keep liquidity abundant, though the Treasury’s large cash balance could become a future drain if it is drawn down for spending.</p>
+
+    <div class="footer">
+      rhozero-div.github.io/rhozero
     </div>
-    
-    <div style="margin-top:2rem;padding:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:8px">
-      <h2 style="font-size:1rem;color:var(--text-muted);margin-bottom:0.75rem">Weekly Report</h2>
-      <p style="font-size:0.9rem"><a href="dollar-liquidity-weekly-report/" style="color:var(--accent)">美元流动性周度分析 →</a></p>
-    </div>
-    
-    <footer>
-      <p>Data sourced from FRED | Weekly report: <a href="dollar-liquidity-weekly-report/" style="color:var(--accent)">美元流动性周度分析</a></p>
-    </footer>
   </div>
-  
-  <script>
-    // Placeholder chart - expand with historical data
-    const ctx = document.getElementById('mainChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: { labels: [], datasets: [] },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: 'top' } },
-        scales: { y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }, x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } } }
-      }
-    });
-  </script>
 </body>
 </html>
