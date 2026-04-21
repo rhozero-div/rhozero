@@ -13,7 +13,12 @@ INDICATORS_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'indicat
 COMMENTARY_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'commentary.json')
 
 def get_minimax_key():
-    """Read MiniMax API key from macOS Keychain."""
+    """Read MiniMax API key from env var (GitHub Actions) or macOS Keychain."""
+    # Check env first (GitHub Actions)
+    api_key = os.environ.get('MINIMAX_API_KEY', '')
+    if api_key:
+        return api_key
+    # Fallback to Keychain (local)
     try:
         result = subprocess.run(
             ['security', 'find-generic-password', '-s', 'MiniMax CN API Key', '-w'],
@@ -23,7 +28,7 @@ def get_minimax_key():
             return result.stdout.strip()
     except Exception as e:
         print(f"[WARN] Could not read Keychain: {e}")
-    return os.environ.get('MINIMAX_API_KEY', '')
+    return ''
 
 def generate_commentary(indicators):
     """Send indicators to MiniMax and get AI commentary."""
@@ -48,11 +53,11 @@ def generate_commentary(indicators):
         'Content-Type': 'application/json'
     }
     payload = {
-        'model': 'MiniMax-Text-01',
+        'model': 'MiniMax-M2.7',
         'messages': [
             {'role': 'user', 'content': prompt}
         ],
-        'max_tokens': 300,
+        'max_tokens': 2000,
         'temperature': 0.3,
     }
     
@@ -60,7 +65,7 @@ def generate_commentary(indicators):
         resp = requests.post(url, headers=headers, json=payload, timeout=30)
         resp.raise_for_status()
         result = resp.json()
-        return result['choices'][0]['message']['content']
+        return result['choices'][0]['message'].get('content', '')
     except Exception as e:
         print(f"[ERROR] MiniMax API: {e}")
         return None

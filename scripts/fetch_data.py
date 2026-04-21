@@ -22,8 +22,26 @@ SERIES = {
 
 OUTPUT_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'indicators.json')
 
+def get_fred_key():
+    """Read FRED API key from env var (GitHub Actions) or macOS Keychain."""
+    # Check env first (GitHub Actions)
+    key = os.environ.get('FRED_API_KEY', '')
+    if key:
+        return key
+    # Fallback to Keychain
+    try:
+        result = subprocess.run(
+            ['security', 'find-generic-password', '-s', 'FRED API Key', '-w'],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.stdout.strip():
+            return result.stdout.strip()
+    except:
+        pass
+    return ''
+
 def get_fred_data(series_id):
-    api_key = os.environ.get('FRED_API_KEY', '')
+    api_key = get_fred_key()
     if not api_key:
         print(f"[WARN] No FRED_API_KEY for {series_id}")
         return None
