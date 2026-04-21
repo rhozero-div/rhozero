@@ -1,0 +1,17 @@
+# Dependencies
+__pycache__/
+*.pyc
+.env
+
+# Data (generated locally, not committed)
+data/indicators.json
+data/commentary.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,50 @@
+name: Update Dashboard
+
+on:
+  schedule:
+    # Daily at 9 AM UTC = 5 PM Beijing
+    - cron: '0 9 * * *'
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pandas python-dotenv
+
+      - name: Fetch data
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+        run: |
+          python scripts/fetch_data.py
+
+      - name: Generate AI commentary
+        env:
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+        run: |
+          python scripts/generate_commentary.py
+
+      - name: Build HTML
+        run: |
+          python scripts/build_html.py
+
+      - name: Commit and push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git diff --staged --quiet || git commit -m "Update dashboard $(date -u +'%Y-%m-%d %H:%M')"
+          git push
