@@ -39,13 +39,15 @@ GitHub-Pages/
 │   ├── build_html.py               # Daily dashboard HTML (Chart.js)
 │   └── run_weekly_github.py         # Weekly report: ratings + charts + HTML + appendix
 ├── docs/
-│   ├── index.html                  # Main dashboard
+│   ├── index.html                  # Landing page (Under Construction → links to sub-pages)
+│   ├── implementation/
+│   │   └── index.html             # Daily dashboard (Chart.js + AI commentary)
 │   └── dollar-liquidity-weekly-report/
 │       ├── index.html              # Weekly report listing
 │       ├── 20260421.html           # Individual report
 │       └── charts/                 # Shared chart PNGs (regenerated weekly)
 └── data/
-    └── liquidity_history.csv        # 730-day FRED data (git-tracked)
+    └── liquidity_history.csv       # 730-day FRED data (git-tracked)
 ```
 
 ## Lessons Learned (经验总结)
