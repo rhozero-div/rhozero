@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>美元流动性周度分析 20260421</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --l1: #3fb950;
+      --l2: #d29922;
+      --l3: #f0883e;
+      --l4: #f85149;
+      --l5: #da3633;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    
+    header { margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    h1 { font-size: 1.75rem; color: var(--accent); margin-bottom: 0.5rem; }
+    h2 { font-size: 1.25rem; color: var(--text); margin: 1.5rem 0 0.75rem; border-left: 3px solid var(--accent); padding-left: 0.75rem; }
+    h3 { font-size: 1rem; color: var(--text-muted); margin: 1rem 0 0.5rem; }
+    p { margin-bottom: 0.75rem; color: var(--text); }
+    
+    .report-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.9rem; }
+    .report-table th { background: var(--card); color: var(--text-muted); padding: 0.6rem 0.75rem; text-align: left; border: 1px solid var(--border); font-weight: 500; }
+    .report-table td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); vertical-align: top; }
+    .report-table tr:hover td { background: rgba(88,166,255,0.05); }
+    
+    figure { margin: 1rem 0; text-align: center; }
+    figure img { max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border); }
+    figcaption { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }
+    
+    .page-break { border: none; border-top: 1px solid var(--border); margin: 2rem 0; page-break-after: always; }
+    
+    .rating-L1 { color: var(--l1); font-weight: bold; }
+    .rating-L2 { color: var(--l2); font-weight: bold; }
+    .rating-L3 { color: var(--l3); font-weight: bold; }
+    .rating-L4 { color: var(--l4); font-weight: bold; }
+    .rating-L5 { color: var(--l5); font-weight: bold; }
+    
+    footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.75rem; }
+    .nav { margin-bottom: 1.5rem; }
+    .nav a { color: var(--accent); text-decoration: none; font-size: 0.875rem; }
+    .nav a:hover { text-decoration: underline; }
+    
+    @media print {
+      .page-break { page-break-after: always; }
+      body { background: white; color: black; }
+      .report-table th { background: #f0f0f0 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav"><a href="../">← 返回首页</a></div>
+    <header>
+      <h1>美元流动性周度分析</h1>
+      <p style="color:var(--text-muted);font-size:0.9rem">报告日期：20260421 | 生成时间：2026-04-21 22:37</p>
+    </header>
+    <h2>一、综合评级</h2><table class="report-table"><thead><tr><th>综合评级</th></tr></thead><tbody><tr><td><b>L1 充裕</b></td></tr></tbody></table><table class="report-table"><thead><tr><th>指标</th><th>评级</th></tr></thead><tbody><tr><td>SOFR-DFF利差</td><td>L1 充裕</td></tr><tr><td>TED利差</td><td>L1 正常</td></tr><tr><td>净流动性</td><td>L1 充裕</td></tr></tbody></table><div style="height:12px"></div><h2>二、一级指标当前值</h2><table class="report-table"><thead><tr><th>指标</th><th>最新值</th><th>评级</th><th>备注</th></tr></thead><tbody><tr><td>SOFR-DFF利差</td><td>-1.0bp</td><td>L1 充裕</td><td>利差<5bp，银行间市场平稳</td></tr><tr><td>TED利差</td><td>-1.0bp</td><td>L1 正常</td><td>SOFR-DFF=-1bp，<历史P10，银行间市场平稳（LIBOR已停用，以SOFR-DFF替代）</td></tr><tr><td>净流动性</td><td>$5.95T</td><td>L1 充裕</td><td>净流动性扩张，流动性环境友好</td></tr></tbody></table><div style="height:8px"></div><h3>一级指标说明</h3><p><b>SOFR-DFF利差</b>（当前: -1.0bp）：SOFR（担保隔夜融资利率）与有效联邦基金利率（EFFR/DFF）之差，反映银行间担保融资市场的信用溢价。FRED SOFR为年利率(%)，已换算为bp显示（业界惯例）；日均值无法捕捉盘中峰值；>50bp为2020 COVID实测危机级别。</p><p><b>TED利差</b>（当前: -1.0bp）：传统3M LIBOR减3M国债收益率已于2022-01-21因LIBOR停用而数据中断；当前以SOFR-DFF日频利差替代。⚠️ 新口径绝对数值不可与历史LIBOR口径TED利差直接比较。</p><p><b>美联储净流动性</b>（当前: $5.95T）：美联储总资产（WALCL）减财政部一般账户（TGA）减RRP余额，反映货币政策与财政政策合力的基础流动性供给。</p><hr class="page-break"><h2>三、二级指标当前值</h2><table class="report-table"><thead><tr><th>指标</th><th>当前值</th><th>评级</th><th>评级说明</th></tr></thead><tbody><tr><td>M2同比增速</td><td>4.88%</td><td>L3</td><td>收紧</td></tr><tr><td>WALCL同比</td><td>-0.32%</td><td>L4</td><td>危险</td></tr><tr><td>10Y-2Y利差</td><td>54bp</td><td>L4</td><td>危险</td></tr><tr><td>DXY美元指数</td><td>118.08</td><td>L3</td><td>收紧</td></tr><tr><td>RRP余额</td><td>$503.0M</td><td>—</td><td>辅助观察</td></tr></tbody></table><div style="height:8px"></div><h3>二级指标说明</h3><p><b>M2同比增速</b>（当前: 4.88%）：M2货币供应量的12个月变化率。2020 COVID后M2同比曾达27%（2021年2月），随后QT压缩至6%以下。当前M2 YoY=4.9%，货币供给偏紧，反映货币供给仍相对紧张。</p><p><b>WALCL同比</b>（当前: -0.32%）：美联储总资产的52周变化率。正值代表扩表（QE），负值代表缩表（QT）。当前QT加速，流动性快速收缩，表明缩表仍在进行。</p><p><b>10Y-2Y利差</b>（当前: 54bp）：利差>150bp为flight-to-safety危机信号（如2008 GFC均值148bp）；利差<-50bp为深度倒挂，是激进QT周期正常现象，非危机信号（如2022 QT均值-33bp）。当前曲线正常陡峭，经济保持增长。</p><p><b>美元指数DXY</b>（当前: 118.08）：美联储贸易加权Broad美元指数(DTWEXBGS)。⚠️ 此为Broad指数（非ICE DXY），含新兴市场货币，通常比ICE DXY高约20点。>123.4（P95）为历史极值，代表美元流动性危机。当前DXY=118.08（P75-P90），美元明显强势，值得警惕。</p><p><b>隔夜逆回购RRP</b>（当前: $503M）：v3.1已从一级指标降为辅助观察，因其在不同市场环境下存在方向性歧义（高余额=过剩/低余额=充裕均有时成立）。FRED RRPONTTLD原始单位为B（十亿美元），已换算为M显示。</p><hr class="page-break"><h2>四、月度趋势</h2><table class="report-table"><thead><tr><th>月份</th><th>SOFR-DFF</th><th>RRP余额</th><th>净流动性</th><th>WALCL同比</th><th>M2同比</th><th>10Y-2Y</th></tr></thead><tbody><tr><td>2026-03</td><td>1bp (L1)</td><td>$15782M (L4)</td><td>$5.78T (L1)</td><td>-1.2% (L4)</td><td>+4.9% (L3)</td><td>54bp (L4)</td></tr><tr><td>2026-02</td><td>2bp (L1)</td><td>$16318M (L4)</td><td>$5.73T (L1)</td><td>-2.3% (L4)</td><td>+4.9% (L3)</td><td>65bp (L4)</td></tr><tr><td>2026-01</td><td>3bp (L1)</td><td>$9629M (L4)</td><td>$5.66T (L2)</td><td>-3.4% (L4)</td><td>+4.3% (L3)</td><td>68bp (L4)</td></tr><tr><td>2025-12</td><td>6bp (L2)</td><td>$105993M (L2)</td><td>$5.80T (L1)</td><td>-3.1% (L4)</td><td>+4.2% (L3)</td><td>65bp (L4)</td></tr><tr><td>2025-11</td><td>12bp (L2)</td><td>$7561M (L4)</td><td>$5.65T (L1)</td><td>-5.1% (L5)</td><td>+3.9% (L3)</td><td>54bp (L4)</td></tr><tr><td>2025-10</td><td>11bp (L2)</td><td>$51802M (L3)</td><td>$5.63T</td><td>-6.1% (L5)</td><td>+4.3% (L3)</td><td>54bp (L4)</td></tr></tbody></table><div style="height:16px"></div><h1>数据来源</h1><p>SOFR: FRED SOFR</p><p>RRP余额: FRED RRPONTTLD（辅助观察）</p><p>净流动性: FRED WALCL - FRED WTREGEN - RRPONTTLD</p><p>M2同比: FRED M2SL（12个月差分）</p><p>WALCL同比: FRED WALCL（52周差分）</p><p>10Y-2Y: FRED T10Y2Y</p><p>TED利差: FRED TEDRATE（2022-01-21后LIBOR停用中断）</p><p>框架说明: Dollar Liquidity Theory Framework v3.1</p><hr class="page-break"><h1>五、图表</h1><h2>5.1 SOFR-DFF利差走势</h2><figure><img src="../weekly/charts/sofr-dff-spread.png" alt=""><figcaption></figcaption></figure><div style="height:6px"></div><h2>5.2 TED利差走势（SOFR-DFF替代口径）</h2><figure><img src="../weekly/charts/ted-spread.png" alt=""><figcaption></figcaption></figure><hr class="page-break"><h2>5.3 净流动性走势</h2><figure><img src="../weekly/charts/net-liquidity.png" alt=""><figcaption></figcaption></figure><div style="height:6px"></div><h2>5.4 M2同比与WALCL同比</h2><figure><img src="../weekly/charts/m2-walcl-yoy.png" alt=""><figcaption></figcaption></figure><hr class="page-break"><h2>5.5 10Y-2Y利差与美元指数</h2><figure><img src="../weekly/charts/yc-dxy.png" alt=""><figcaption></figcaption></figure><div style="height:6px"></div><h2>5.6 RRP余额走势</h2><figure><img src="../weekly/charts/rrp-balance.png" alt=""><figcaption></figcaption></figure><hr class="page-break"><h1>附录</h1><h2>一、评级阈值速查表（v3.1）</h2><h3>（一）一级指标（主导综合评级，取最差值）</h3><p><b>SOFR-DFF 利差（日均值）</b></p><table class="report-table"><thead><tr><th>区间</th><th>评级</th><th>含义</th></tr></thead><tbody><tr><td><5bp</td><td>L1</td><td>充裕，正常宽松</td></tr><tr><td>5–15bp</td><td>L2</td><td>温和，货币市场轻微收紧</td></tr><tr><td>15–35bp</td><td>L3</td><td>关注，流动性收紧信号</td></tr><tr><td>35–50bp</td><td>L4</td><td>警惕，银行间压力上升</td></tr><tr><td>>50bp</td><td>L5</td><td>危机，系统性风险（2020 COVID峰值约50bp）</td></tr></tbody></table><p>当前: -1.0bp → L1 充裕</p><div style="height:4px"></div><p><b>TED 利差（历史LIBOR口径，2022年后需替换）</b></p><table class="report-table"><thead><tr><th>区间</th><th>评级</th><th>含义</th></tr></thead><tbody><tr><td><20bp</td><td>L1</td><td>充裕（历史P10）</td></tr><tr><td>20–40bp</td><td>L2</td><td>温和（历史P25）</td></tr><tr><td>40–70bp</td><td>L3</td><td>关注（历史P50–P75）</td></tr><tr><td>70–140bp</td><td>L4</td><td>警惕（历史P95）</td></tr><tr><td>>140bp</td><td>L5</td><td>危机（历史P99，2008 GFC峰值458bp）</td></tr></tbody></table><p>当前: -1.0bp → L1 正常</p><p>> 注：2022-01-21 LIBOR停用后，建议以SOFR3-TB3MS替代。历史百分位基于1986–2022 TEDRATE共9,099个观测。</p><hr class="page-break"><h3>（二）二级指标（辅助验证，不参与综合评级）</h3><p><b>美联储净流动性（WALCL − TGA − RRP）</b></p><table class="report-table"><thead><tr><th>区间</th><th>评级</th><th>含义</th></tr></thead><tbody><tr><td>>6.5T</td><td>L1</td><td>QE大规模放水</td></tr><tr><td>5.5–6.5T</td><td>L2</td><td>正常区间</td></tr><tr><td>4.5–5.5T</td><td>L3</td><td>QT进行中，收紧</td></tr><tr><td>3.5–4.5T</td><td>L4</td><td>深度QT</td></tr><tr><td><3.5T</td><td>L5</td><td>极度收紧</td></tr></tbody></table><p>当前: $5.95T → L1 充裕</p><div style="height:4px"></div><p><b>WALCL 同比变化</b></p><table class="report-table"><thead><tr><th>区间</th><th>信号</th></tr></thead><tbody><tr><td>>10%</td><td>L1 QE大扩表</td></tr><tr><td>5–10%</td><td>L2 温和扩张</td></tr><tr><td>0–5%</td><td>L3 正常</td></tr><tr><td>-5–0%</td><td>L4 QT进行中</td></tr><tr><td><-5%</td><td>L5 深度QT</td></tr></tbody></table><p>当前: WALCL同比 -0.32% → L4 危险</p><div style="height:4px"></div><p><b>M2 同比变化</b></p><table class="report-table"><thead><tr><th>区间</th><th>信号</th></tr></thead><tbody><tr><td>>15%</td><td>L1 超级QE</td></tr><tr><td>10–15%</td><td>L2 扩张</td></tr><tr><td>5–10%</td><td>L3 正常</td></tr><tr><td>0–5%</td><td>L4 收紧</td></tr><tr><td><0%</td><td>L5 收缩</td></tr></tbody></table><p>当前: M2同比 4.88% → L3 收紧</p><hr class="page-break"><p><b>10Y-2Y 收益率曲线利差</b></p><table class="report-table"><thead><tr><th>区间</th><th>信号</th></tr></thead><tbody><tr><td>>150bp</td><td>L1 正常陡峭（危机前兆，2008 GFC均值148bp）</td></tr><tr><td>50–150bp</td><td>L2 正常至接近倒挂</td></tr><tr><td>0–50bp</td><td>L3 接近倒挂</td></tr><tr><td>-50–0bp</td><td>L4 倒挂（QT周期正常现象）</td></tr><tr><td><-50bp</td><td>L5 深度倒挂（激进QT，非危机）</td></tr></tbody></table><p>当前: 54bp → L4 危险。注：倒挂≠危机。2008 GFC爆发时曲线已转陡峭；2022 QT期间深度倒挂但经济未崩溃。方向比绝对值更重要。</p><div style="height:4px"></div><p><b>RRP 隔夜逆回购余额</b></p><table class="report-table"><thead><tr><th>余额</th><th>信号</th></tr></thead><tbody><tr><td>>1.0T</td><td>流动性冗余淤积</td></tr><tr><td>0.5–1.0T</td><td>正常区间</td></tr><tr><td>0.1–0.5T</td><td>缓冲量减少，流动性流入市场</td></tr><tr><td><0.1T</td><td>极低（需结合情境判断含义）</td></tr></tbody></table><p>当前: $503.0M → 辅助观察</p><div style="height:4px"></div><p><b>DXY 美元指数</b></p><table class="report-table"><thead><tr><th>区间</th><th>信号</th></tr></thead><tbody><tr><td><100</td><td>L1 弱势美元</td></tr><tr><td>100–109</td><td>L2 正常偏低</td></tr><tr><td>109–116</td><td>L3 正常</td></tr><tr><td>116–121</td><td>L4 强势</td></tr><tr><td>>121</td><td>L5 极端强势（历史P95）</td></tr></tbody></table><p>当前: DXY 118.08 → L3 收紧</p>
+    <footer>
+      <p>数据来源：FRED (Federal Reserve Economic Data) | 框架：Dollar Liquidity Theory v3.1</p>
+    </footer>
+  </div>
+</body>
+</html>
