@@ -36,11 +36,20 @@ def build_html(indicators, commentary, updated):
         value = data.get('value')
         date = data.get('date', 'N/A')
         if value is not None:
-            if name in ['WALCL', 'RRP', 'TGA', 'NetLiquidity', 'M2']:
-                # Large numbers in billions
-                display = f"${value/1000:.1f}T" if name == 'M2' else f"${value/1000:.1f}B"
-            elif name in ['SOFR', 'TED', 'T10Y2Y']:
-                display = f"{value:.3f}%"
+            if name in ['WALCL', 'TGA', 'NetLiquidity']:
+                # Fed balance sheet items in billions
+                display = f"${value/1000:.1f}B"
+            elif name == 'RRP':
+                # RRP in billions (FRED already in B)
+                display = f"${value:.1f}B"
+            elif name == 'M2':
+                display = f"${value/1000:.1f}T"
+            elif name in ['SOFR', 'T10Y2Y']:
+                # Percent, show as bp for small values
+                display = f"{value:.2f}% ({value*100:.0f}bp)"
+            elif name == 'TED':
+                # TED spread in bp (FRED TEDRATE is already in %, multiply by 100)
+                display = f"{value:.2f}% ({value*100:.0f}bp)"
             else:
                 display = f"{value:.2f}"
             rows.append(f"<tr><td>{name}</td><td>{display}</td><td>{date}</td></tr>")
