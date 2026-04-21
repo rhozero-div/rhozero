@@ -40,7 +40,7 @@ def render_element(el, report_date):
         caption = el.get('caption', '')
         # Convert absolute path to relative path for web
         filename = os.path.basename(img_path)
-        return f'<figure><img src="../weekly/charts/{filename}" alt="{caption}"><figcaption>{caption}</figcaption></figure>'
+        return f'<figure><img src="charts/{filename}" alt="{caption}"><figcaption>{caption}</figcaption></figure>'
     return ''
 
 def build_html(content_json_path, report_date):
