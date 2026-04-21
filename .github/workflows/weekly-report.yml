@@ -1,0 +1,43 @@
+name: Weekly Liquidity Report
+
+on:
+  schedule:
+    # Every Monday at 10 AM UTC = 6 PM Beijing
+    - cron: '0 10 * * 1'
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  weekly-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas matplotlib requests
+
+      - name: Fetch FRED data
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          python scripts/fetch_data.py
+
+      - name: Generate weekly report
+        run: |
+          python scripts/run_weekly_github.py
+
+      - name: Commit and push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git diff --staged --quiet || git commit -m "Weekly report $(date -u +'%Y-%m-%d')"
+          git push
