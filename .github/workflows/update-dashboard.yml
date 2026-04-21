@@ -9,7 +9,7 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -27,7 +27,6 @@ jobs:
       - name: Fetch data
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
         run: |
           python scripts/fetch_data.py
 
@@ -37,7 +36,7 @@ jobs:
         run: |
           python scripts/generate_commentary.py
 
-      - name: Build HTML
+      - name: Build main dashboard
         run: |
           python scripts/build_html.py
 
