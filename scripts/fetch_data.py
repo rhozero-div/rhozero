@@ -11,20 +11,20 @@ import requests
 from datetime import datetime, timedelta
 from pathlib import Path
 
-# ── FRED API Key ──────────────────────────────────────────────────────────────
+# ── API Key ────────────────────────────────────────────────────────────────────────
 def get_fred_key():
+    """Read data API key from env var (CI) or Keychain (local)."""
     key = os.environ.get('FRED_API_KEY', '')
     if key:
         return key
     try:
-        import subprocess
-        r = subprocess.run(
-            ['security', 'find-generic-password', '-s', 'FRED API Key', '-w'],
+        result = subprocess.run(
+            ['security', 'find-generic-password', '-s', 'Data API Key', '-w'],
             capture_output=True, text=True, timeout=5
         )
-        if r.stdout.strip():
-            return r.stdout.strip()
-    except:
+        if result.stdout.strip():
+            return result.stdout.strip()
+    except Exception:
         pass
     return ''
 

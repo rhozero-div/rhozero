@@ -120,7 +120,7 @@ def build_html(indicators, commentary, updated):
     </div>
     
     <footer>
-      <p>Data sourced from FRED (Federal Reserve Economic Data) | AI commentary via MiniMax</p>
+      <p>Data sourced from FRED (Federal Reserve Economic Data) | AI commentary generated daily</p>
     </footer>
   </div>
   

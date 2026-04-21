@@ -7,7 +7,7 @@ Investment indicator dashboard + automated weekly report, hosted on GitHub Pages
 ## Architecture
 
 ```
-Daily:  FRED API → fetch_data.py → generate_commentary.py (MiniMax AI) → build_html.py → GitHub Pages
+Daily:  FRED API → fetch_data.py → generate_commentary.py (AI) → build_html.py → GitHub Pages
 Weekly: FRED API → fetch_data.py → run_weekly_github.py (full report, no AI) → GitHub Pages
                                           ↑
                               GitHub Actions Cron (both workflows)
@@ -20,7 +20,7 @@ Weekly: FRED API → fetch_data.py → run_weekly_github.py (full report, no AI)
 | Layer | Choice | Reason |
 |-------|--------|--------|
 | Hosting | GitHub Pages (free) | 静态托管，无成本 |
-| Daily AI | MiniMax API (M2.7, 2000 tokens) | 有免费额度，GitHub Secrets 存储 |
+| Daily AI | AI API (env var configured in GitHub Secrets) | 免费额度，GitHub Secrets 存储 |
 | Weekly AI | 无（规则模板） | 无需实时解读，硬编码评级足够 |
 | Charts | matplotlib (服务器端 PNG) | 不依赖前端 JS，SEO 友好 |
 | Automation | GitHub Actions cron | 免费、免维护、可手动触发 |
@@ -35,7 +35,7 @@ GitHub-Pages/
 │       └── weekly-report.yml       # Weekly cron: fetch + full report (Mon 10 AM UTC)
 ├── scripts/
 │   ├── fetch_data.py               # FRED 730-day history → liquidity_history.csv
-│   ├── generate_commentary.py       # Daily AI commentary via MiniMax M2.7
+│   ├── generate_commentary.py     # Daily AI commentary
 │   ├── build_html.py               # Daily dashboard HTML (Chart.js)
 │   └── run_weekly_github.py         # Weekly report: ratings + charts + HTML + appendix
 ├── docs/
@@ -74,13 +74,13 @@ GitHub-Pages/
 ```
 
 ### 4. AI 走云端还是本地
-- 日报 AI（MiniMax）：在 GitHub Actions 里调用 API 生成英文点评，写入 `commentary.json`，`build_html.py` 读取
+- 日报 AI：在 GitHub Actions 里调用 API 生成英文点评，写入 `commentary.json`，`build_html.py` 读取
 - 周报无 AI：纯规则模板，完全批处理，最稳定
 - **判断标准**：是否需要实时/个性化解读？周报是结构化报告，规则足够
 
 ### 5. API Key 管理
-- FRED key 存 GitHub Secrets → Actions 里 `env: FRED_API_KEY: ${{ secrets.FRED_API_KEY }}`
-- MiniMax key 同理
+- API keys 存 GitHub Secrets → Actions 里通过环境变量注入，脚本不直接读取
+- API keys 同理
 - 本地跑时：环境变量优先，回退 Keychain（`os.environ.get()` → `security find-generic-password`）
 
 ### 6. L_NAMES 前缀重复 bug
