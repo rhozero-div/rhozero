@@ -140,7 +140,7 @@ r_yc,   n_yc,   e_yc   = (rate_yc(t10y2y_bp) if t10y2y_bp is not None else (3, "
 r_dxy,  n_dxy,  e_dxy  = (rate_dxy(dxy) if dxy is not None else (3, "正常", "数据不可用"))
 r_overall = overall_rating(r_sofr, r_ted, r_nl)
 
-L_NAMES = {1: "L1 充裕", 2: "L2 略紧", 3: "L3 收紧", 4: "L4 危险", 5: "L5 危机"}
+L_NAMES = {1: "充裕", 2: "略紧", 3: "收紧", 4: "危险", 5: "危机"}
 
 print(f"Latest: SOFR-DFF={sofr_dff_bp:.1f}bp L{r_sofr} | TED={ted_bp:.1f}bp L{r_ted} | RRP=${rrp_m/1e6:.2f}T | NL=${nl_curr/1e6:.2f}T")
 print(f"Overall Rating: L{r_overall} {L_NAMES[r_overall]}")
