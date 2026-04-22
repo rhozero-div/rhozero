@@ -3,167 +3,82 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RhoZero</title>
+  <title>Investment Indicators Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: #f5f0e8;
-      color: #2a2520;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
     }
-
-    .container {
-      text-align: center;
-      padding: 40px;
-      max-width: 600px;
-    }
-
-    .logo {
-      font-size: 48px;
-      font-weight: 800;
-      letter-spacing: -2px;
-      margin-bottom: 8px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .tagline {
-      font-size: 14px;
-      color: #8a7d72;
-      margin-bottom: 48px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-
-    .status {
-      display: inline-block;
-      padding: 6px 16px;
-      border: 1px solid #e0d8cc;
-      border-radius: 20px;
-      font-size: 12px;
-      color: #8a7d72;
-      margin-bottom: 40px;
-    }
-
-    .links {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .link-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 24px;
-      background: #faf7f2;
-      border: 1px solid #e0d8cc;
-      border-radius: 12px;
-      text-decoration: none;
-      color: #2a2520;
-      transition: all 0.2s ease;
-    }
-
-    .link-card:hover {
-      border-color: #8B5A2B;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 20px rgba(139, 90, 43, 0.1);
-    }
-
-    .link-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .link-icon {
-      font-size: 24px;
-    }
-
-    .link-title {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
-
-    .link-desc {
-      font-size: 12px;
-      color: #8a7d72;
-    }
-
-    .link-arrow {
-      color: #8B5A2B;
-      font-size: 18px;
-    }
-
-    .footer {
-      margin-top: 48px;
-      font-size: 11px;
-      color: #8a7d72;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    header { margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    h1 { color: var(--accent); }
+    .updated { color: var(--text-muted); font-size: 0.875rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+    h2 { font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-muted); font-weight: 500; }
+    .commentary { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+    .commentary p { font-size: 1.1rem; }
+    .chart-container { height: 300px; }
+    footer { margin-top: 2rem; text-align: center; color: var(--text-muted); font-size: 0.75rem; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="logo">RhoZero</div>
-    <div class="tagline">Investment Intelligence</div>
-    <div class="status">⚙ Under Construction</div>
-
-    <div class="links">
-      <a href="dollar-liquidity-weekly-report/" class="link-card">
-        <div class="link-left">
-          <span class="link-icon">📊</span>
-          <div>
-            <div class="link-title">Dollar Liquidity Weekly Report</div>
-            <div class="link-desc">Weekly liquidity analysis · L1–L5 rating system</div>
-          </div>
+    <header>
+      <h1>Investment Indicators</h1>
+      <p class="updated">Last updated: Never</p>
+    </header>
+    
+    <div class="grid">
+      <div class="card">
+        <h2>Current Values</h2>
+        <table>
+          <thead><tr><th>Indicator</th><th>Value</th><th>Date</th></tr></thead>
+          <tbody><tr><td colspan="3">No data</td></tr></tbody>
+        </table>
+      </div>
+      
+      <div class="card">
+        <h2>Charts</h2>
+        <div class="chart-container">
+          <canvas id="mainChart"></canvas>
         </div>
-        <span class="link-arrow">→</span>
-      </a>
-
-      <a href="implementation/" class="link-card">
-        <div class="link-left">
-          <span class="link-icon">🖥</span>
-          <div>
-            <div class="link-title">Implementation Dashboard</div>
-            <div class="link-desc">Daily indicators · AI commentary · Chart.js</div>
-          </div>
-        </div>
-        <span class="link-arrow">→</span>
-      </a>
-
-      <a href="gold-board/" class="link-card">
-        <div class="link-left">
-          <span class="link-icon">🥇</span>
-          <div>
-            <div class="link-title">Gold Board · 黄金看板</div>
-            <div class="link-desc">4层拓扑网 · 财政压力指数 · 2×2矩阵 · 四件套 · D3.js</div>
-          </div>
-        </div>
-        <span class="link-arrow">→</span>
-      </a>
-
-      <a href="demo/gold.html" class="link-card">
-        <div class="link-left">
-          <span class="link-icon">📈</span>
-          <div>
-            <div class="link-title">Gold Price Chart</div>
-            <div class="link-desc">yfinance data · Chart.js + 120MA · Gold Eagle news</div>
-          </div>
-        </div>
-        <span class="link-arrow">→</span>
-      </a>
+      </div>
     </div>
-
-    <div class="footer">
-      rhozero-div.github.io/rhozero
+    
+    <div class="commentary">
+      <h2>AI Commentary</h2>
+      <p>Commentary generation failed. Check data.</p>
     </div>
+    
+    <footer>
+      <p>Data sourced from FRED (Federal Reserve Economic Data) | AI commentary generated daily</p>
+    </footer>
   </div>
+  
+  <script>
+    // Placeholder chart - expand with historical data
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: { labels: [], datasets: [] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true, position: 'top' } },
+        scales: { y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }, x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } } }
+      }
+    });
+  </script>
 </body>
 </html>

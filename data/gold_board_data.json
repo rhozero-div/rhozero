@@ -1,38 +1,42 @@
 {
-  "updated_at": "2026-04-22T23:08:10.457986+08:00",
+  "updated_at": "2026-04-22T16:22:29.285584+00:00",
   "layers": {
     "4_institutional": {
-      "debt_gdp": null,
-      "deficit_gdp": null,
-      "debt_date": null,
-      "deficit_date": null
+      "debt_gdp": 122.56815,
+      "deficit_gdp": -1774684.0,
+      "debt_date": "2025-10-01",
+      "deficit_date": "2025-09-30"
     },
     "3_macro": {
-      "real_rate": null,
-      "inflation_exp": null,
-      "dxy": null,
-      "financial_cond": null,
-      "core_pce": null,
-      "unemployment": null
+      "real_rate": 1.91,
+      "inflation_exp": 2.38,
+      "dxy": 118.0795,
+      "financial_cond": -0.497,
+      "core_pce": 129.449,
+      "unemployment": 4.3
     },
     "2_market": {
-      "gld_etf_flow": 1.74
+      "gld_etf_flow": 3.07
     }
   },
   "fiscal_index": {
-    "score": null,
-    "zone": "unknown",
-    "components": {},
-    "debt_gdp_raw": null,
-    "deficit_gdp_raw": null
+    "score": 29.0,
+    "zone": "normal",
+    "components": {
+      "debt_gdp": 29.0,
+      "deficit_gdp": 0,
+      "interest_burden": 0
+    },
+    "debt_gdp_raw": 122.56815,
+    "deficit_gdp_raw": -1774684.0
   },
   "matrix_2x2": {
-    "growth": "weak",
-    "inflation": "low",
+    "growth": "strong",
+    "inflation": "high",
     "quadrant": {
-      "label": "\u8870\u9000",
-      "implication": "\u9ec4\u91d1\u4e2d\u6027\u504f\u591a",
-      "signal": "cautious_bull"
+      "label": "\u7e41\u8363",
+      "implication": "risk-on, gold neutral",
+      "signal": "neutral"
     }
   },
   "four_suits": {
@@ -42,13 +46,13 @@
       "signal": "neutral"
     },
     "ma_system": {
-      "value": 4751.89990234375,
-      "ma20": 4695.52,
-      "ma60": 4896.39,
-      "ma200": 4208.74
+      "value": 4749.0,
+      "ma20": 4695.38,
+      "ma60": 4896.34,
+      "ma200": 4208.72
     },
     "gld_etf": {
-      "value": 1.74,
+      "value": 3.07,
       "unit": "M shares (volume proxy)"
     },
     "cfct": {
@@ -2071,14 +2075,14 @@
     },
     {
       "date": "2026-04-22",
-      "close": 4751.9
+      "close": 4749.0
     }
   ],
   "gold_price": {
-    "current": 4751.89990234375,
+    "current": 4749.0,
     "prev": 4698.39990234375,
-    "change": 53.5,
-    "change_pct": 1.14
+    "change": 50.6,
+    "change_pct": 1.08
   },
   "moving_averages": {
     "ma20": [
@@ -2585,7 +2589,7 @@
       4651.36,
       4663.18,
       4677.89,
-      4695.52
+      4695.38
     ],
     "ma60": [
       null,
@@ -3091,7 +3095,7 @@
       4908.19,
       4906.49,
       4901.86,
-      4896.39
+      4896.34
     ],
     "ma200": [
       null,
@@ -3597,7 +3601,7 @@
       4187.44,
       4194.81,
       4201.64,
-      4208.74
+      4208.72
     ],
     "dates": [
       "2024-04-22",
