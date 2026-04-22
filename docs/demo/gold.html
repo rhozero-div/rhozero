@@ -174,9 +174,9 @@
       <div class="ticker-name">Gold Futures (USD/oz)</div>
     </div>
     <div class="price-group">
-      <div class="price">$4,760.90</div>
-      <div class="change" style="color: #f87171">-45.70 (-0.95%)</div>
-      <div class="updated">Updated 2026-04-22T08:37:44.563275+08:00</div>
+      <div class="price" id="live-price">$4,760.90</div>
+      <div class="change" id="price-change" style="color: #f87171">-45.70 (-0.95%)</div>
+      <div class="updated" id="price-updated">Updated 2026-04-22T08:37:44.563275+08:00</div>
     </div>
   </div>
 
@@ -334,6 +334,49 @@
         }
       }
     });
+  </script>
+
+  <script>
+    // ── Live price polling (5s interval) ──────────────────────────────────
+    // Yahoo Finance public API (no key required)
+    const YF_URL = 'https://query1.finance.yahoo.com/v7/quote/GC=F';
+
+    let prevClose = null;
+
+    async function fetchLivePrice() {
+      try {
+        const resp = await fetch(YF_URL, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+        const json = await resp.json();
+        const quote = json?.quoteResponse?.result?.[0];
+        if (!quote || !quote.regularMarketPrice) return;
+
+        const price = quote.regularMarketPrice;
+        const change = quote.regularMarketChange;
+        const changePct = quote.regularMarketChangePercent;
+        const marketTime = quote.regularMarketTime;
+
+        // Update price
+        document.getElementById('live-price').textContent =
+          '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        // Update change
+        const chgEl = document.getElementById('price-change');
+        const sign = change >= 0 ? '+' : '';
+        chgEl.textContent = `${sign}${change.toFixed(2)} (${sign}${changePct.toFixed(2)}%)`;
+        chgEl.style.color = change >= 0 ? '#2d8a4e' : '#c0392b';
+
+        // Update timestamp
+        const t = new Date(marketTime * 1000);
+        document.getElementById('price-updated').textContent =
+          'Live · ' + t.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      } catch (e) {
+        console.warn('Price fetch failed:', e);
+      }
+    }
+
+    // Poll every 5 seconds
+    fetchLivePrice();
+    setInterval(fetchLivePrice, 5000);
   </script>
 </body>
 </html>
