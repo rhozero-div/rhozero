@@ -52,6 +52,16 @@ jobs:
         run: |
           python scripts/build_gold_demo.py
 
+      - name: Fetch gold board data
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          python scripts/fetch_gold_board_data.py
+
+      - name: Build gold board page
+        run: |
+          python scripts/build_gold_board.py
+
       - name: Commit and push
         run: |
           git config --local user.email "action@github.com"
