@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests pandas python-dotenv yfinance
+          pip install requests pandas python-dotenv yfinance feedparser
 
       - name: Fetch data
         env:
