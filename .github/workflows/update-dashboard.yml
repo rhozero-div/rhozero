@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests pandas python-dotenv
+          pip install requests pandas python-dotenv yfinance
 
       - name: Fetch data
         env:
@@ -39,6 +39,18 @@ jobs:
       - name: Build main dashboard
         run: |
           python scripts/build_html.py
+
+      - name: Fetch gold demo data
+        run: |
+          python scripts/fetch_gold_data.py
+
+      - name: Fetch gold news
+        run: |
+          python scripts/fetch_gold_news.py
+
+      - name: Build gold demo page
+        run: |
+          python scripts/build_gold_demo.py
 
       - name: Commit and push
         run: |

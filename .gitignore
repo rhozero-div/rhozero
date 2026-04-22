@@ -3,9 +3,11 @@ __pycache__/
 *.pyc
 .env
 
-# Data (generated locally, not committed)
+# Data (generated locally & by workflow, not committed)
 data/indicators.json
 data/commentary.json
+data/gold_data.json
+data/gold_news.json
 
 # OS
 .DS_Store
