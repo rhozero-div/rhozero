@@ -43,12 +43,11 @@ def build_html(data, news, updated):
     news_items = news.get("articles", [])
     news_html = ""
     for n in news_items:
-        img_tag = f'<img src="{n["social_image"]}" alt="" loading="lazy" onerror="this.style.display=\'none\'">' if n.get("social_image") else ""
+        source_tag = n["source"].upper().replace(".", "").replace("COM", "")[:10]
         news_html += f"""
         <a href="{n['url']}" target="_blank" rel="noopener" class="news-item">
-          <div class="news-img">{img_tag}</div>
           <div class="news-body">
-            <div class="news-meta">{n['source']} · {n['published'][:10]}</div>
+            <div class="news-meta"><span class="news-source-tag">{source_tag}</span>{n['published'][:10]}</div>
             <div class="news-title">{n['title']}</div>
           </div>
         </a>"""
