@@ -44,7 +44,7 @@ All pages share a unified warm cream + muted brown palette.
 
 ### Migration Notes
 
-- **2026-04-22**: Unified from dark theme to warm cream. All pages now share the `:root` vars above.
+- **2026-04-22 (session #002)**: `.news-source-tag` changed from `background: var(--accent)` to `background: transparent` with `color: var(--accent)` — accent background on source tags felt heavy, now uses accent as text color only.
 - `--accent` replaced `#c4922a` (bright gold) → `#8B5A2B` (sienna brown) for a more mature, understated tone.
 - `gold.html` had a double-brace CSS syntax bug (`{{` in `<style>` tag) — fixed to valid `{ }` so the theme actually applies.
 
