@@ -1,10 +1,13 @@
 name: Update Dashboard
-
 on:
   schedule:
     # Daily at 9 AM UTC = 5 PM Beijing
     - cron: '0 9 * * *'
   workflow_dispatch:  # Manual trigger
+
+permissions:
+  contents: write
+  pull-requests: read
 
 jobs:
   update:
