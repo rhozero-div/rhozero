@@ -81,13 +81,15 @@ Copy the `:root` block into your `<style>` tag and use CSS variables throughout.
 ```
 docs/
 ├── index.html                              # Homepage
+├── gold-board/
+│   └── index.html                         # Gold Board — topology graph + fiscal index + matrix + four suits
 ├── demo/
-│   └── gold.html                           # Gold price demo (Chart.js + news + AI button)
+│   └── gold.html                          # Gold price demo (Chart.js + news)
 ├── implementation/
-│   └── index.html                          # Dollar Liquidity Theory implementation
+│   └── index.html                         # Dollar Liquidity Theory implementation
 └── dollar-liquidity-weekly-report/
-    ├── index.html                          # Report archive listing
-    └── 20260421.html                       # W17 2026 weekly report
+    ├── index.html                         # Report archive listing
+    └── 20260421.html                      # W17 2026 weekly report
 ```
 
 ## Deployment
