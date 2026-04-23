@@ -1,22 +1,23 @@
 {
-  "updated_at": "2026-04-22T16:22:29.285584+00:00",
+  "updated_at": "2026-04-23T09:29:14.867637+08:00",
   "layers": {
     "4_institutional": {
       "debt_gdp": 122.56815,
-      "deficit_gdp": -1774684.0,
+      "deficit_gdp": null,
       "debt_date": "2025-10-01",
-      "deficit_date": "2025-09-30"
+      "deficit_date": null,
+      "interest_burden": null
     },
     "3_macro": {
-      "real_rate": 1.91,
+      "real_rate": 1.92,
       "inflation_exp": 2.38,
       "dxy": 118.0795,
       "financial_cond": -0.497,
-      "core_pce": 129.449,
+      "core_pce": 2.8,
       "unemployment": 4.3
     },
     "2_market": {
-      "gld_etf_flow": 3.07
+      "gld_etf_flow": 5.03
     }
   },
   "fiscal_index": {
@@ -28,14 +29,14 @@
       "interest_burden": 0
     },
     "debt_gdp_raw": 122.56815,
-    "deficit_gdp_raw": -1774684.0
+    "deficit_gdp_raw": null
   },
   "matrix_2x2": {
     "growth": "strong",
-    "inflation": "high",
+    "inflation": "low",
     "quadrant": {
-      "label": "\u7e41\u8363",
-      "implication": "risk-on, gold neutral",
+      "label": "\u6b63\u5e38\u589e\u957f",
+      "implication": "\u9ec4\u91d1\u4e2d\u6027",
       "signal": "neutral"
     }
   },
@@ -46,13 +47,13 @@
       "signal": "neutral"
     },
     "ma_system": {
-      "value": 4749.0,
-      "ma20": 4695.38,
-      "ma60": 4896.34,
-      "ma200": 4208.72
+      "value": 4750.7001953125,
+      "ma20": 4695.46,
+      "ma60": 4896.37,
+      "ma200": 4208.73
     },
     "gld_etf": {
-      "value": 3.07,
+      "value": 5.03,
       "unit": "M shares (volume proxy)"
     },
     "cfct": {
@@ -2075,14 +2076,14 @@
     },
     {
       "date": "2026-04-22",
-      "close": 4749.0
+      "close": 4750.7
     }
   ],
   "gold_price": {
-    "current": 4749.0,
+    "current": 4750.7001953125,
     "prev": 4698.39990234375,
-    "change": 50.6,
-    "change_pct": 1.08
+    "change": 52.3,
+    "change_pct": 1.11
   },
   "moving_averages": {
     "ma20": [
@@ -2589,7 +2590,7 @@
       4651.36,
       4663.18,
       4677.89,
-      4695.38
+      4695.46
     ],
     "ma60": [
       null,
@@ -3095,7 +3096,7 @@
       4908.19,
       4906.49,
       4901.86,
-      4896.34
+      4896.37
     ],
     "ma200": [
       null,
@@ -3601,7 +3602,7 @@
       4187.44,
       4194.81,
       4201.64,
-      4208.72
+      4208.73
     ],
     "dates": [
       "2024-04-22",
@@ -4109,5 +4110,6 @@
       "2026-04-21",
       "2026-04-22"
     ]
-  }
+  },
+  "sge_premium": null
 }
