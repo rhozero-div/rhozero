@@ -34,16 +34,19 @@ OUTPUT = DATA_DIR / "gold_board_data.json"
 FRED_SERIES = {
     # Layer 4: Institutional
     "debt_gdp":        ("GFDEGDQ188S",   "percent",   "Federal Debt to GDP"),
-    "deficit_gdp":     ("FYFSD",         "percent",   "Federal Deficit to GDP"),
-    # interest_income ratio — no single FRED series; use NETEXP + FYFR
+    # FYFENDA = Annual Federal Deficit (in millions USD, negative = deficit)
+    "deficit_gdp":     ("FYFENDA",       "percent",   "Annual Federal Deficit to GDP"),
+    # Interest income / total revenue — FRED: FYONET / FYFR (both in millions)
+    "interest_burden": ("FYINT",         "percent",   "Federal Interest / Revenue"),
     # Layer 3: Macro
     "real_rate":       ("DFII10",        "percent",   "10-Yr Real Interest Rate"),
     "inflation_exp":   ("T10YIE",        "percent",   "10-Yr Inflation Expectation"),
     "dxy":             ("DTWEXBGS",      "index",     "Trade Weighted USD Broad"),
     "financial_cond":  ("NFCI",          "index",     "Chicago Financial Conditions"),
-    "core_pce":        ("PCEPI",         "percent",   "Core PCE Price Index YoY"),
     "unemployment":    ("UNRATE",        "percent",   "Unemployment Rate"),
     "gold_price_fred": ("GOLDAMGBD228NLBM", "usd",    "Gold Fixing Price"),
+    # PCEPI price index (base=100) — YoY computed in fetch_pce_yoy()
+    "pcepi":           ("PCEPI",         "index",     "PCE Price Index"),
 }
 
 
@@ -117,24 +120,83 @@ def fetch_gld_holdings():
     return None
 
 
-def calc_fiscal_index(debt_gdp: float, deficit_gdp: float) -> dict:
-    """
-    Fiscal Pressure Index.
-    Components:
-      - debt/gdp  : weight 40  (baseline 50%=0, 150%=100)
-      - deficit/gdp: weight 25  (baseline 1%=0, 10%=100)
-      - interest burden approx from deficit surge (weight 35)
-    """
-    if debt_gdp is None:
-        return {"score": None, "zone": "unknown", "components": {}}
+def fetch_fred_series_history(series_id: str, api_key: str, limit: int = 24) -> list:
+    """Returns list of (date_str, value) sorted desc, or [] on failure."""
+    if not HAS_REQUESTS:
+        return []
+    url = "https://api.stlouisfed.org/fred/series/observations"
+    params = {
+        "series_id": series_id,
+        "api_key": api_key,
+        "file_type": "json",
+        "limit": limit,
+        "sort_order": "desc",
+    }
+    try:
+        r = requests.get(url, params=params, timeout=30)
+        r.raise_for_status()
+        obs = r.json().get("observations", [])
+        result = []
+        for o in obs:
+            if o["value"] not in ("", ".", None):
+                result.append((o["date"], float(o["value"])))
+        return result
+    except Exception as e:
+        print(f"    [WARN] FRED history {series_id}: {e}")
+    return []
 
-    # Normalize each to 0-100
-    d1 = max(0, min(100, (debt_gdp - 50) / 100 * 40))          # debt weight 40
-    d2 = max(0, min(100, (deficit_gdp - 1) / 9 * 25))          # deficit weight 25
-    # Interest pressure proxy: deficit magnitude as proxy
-    d3 = max(0, min(100, (deficit_gdp - 1) / 5 * 35))          # interest weight 35 (surge proxy)
 
+def fetch_pce_yoy(api_key: str) -> tuple:
+    """
+    Compute Core PCE year-over-year % change from PCEPI price index.
+    Returns (pce_yoy, date_str) or (None, None).
+    PCEPI is a price index (base=100, 2017=100 by default).
+    """
+    history = fetch_fred_series_history("PCEPI", api_key, limit=15)
+    if len(history) < 2:
+        return None, None
+    # history is sorted desc (newest first)
+    latest = history[0]
+    # Find value from ~12 months ago
+    import datetime as dt
+    try:
+        latest_date = dt.datetime.strptime(latest[0], "%Y-%m-%d")
+    except:
+        return None, None
+    target_year = latest_date.year - 1
+    target_month = latest_date.month
+    # Find closest date from 12 months prior
+    target_str = f"{target_year}-{latest_date.month:02d}-01"
+    prior = None
+    for date_str, val in history:
+        if date_str.startswith(target_str[:7]):
+            prior = val
+            break
+    if prior is None:
+        # fallback: use last available from prior year
+        for date_str, val in history[12:]:
+            prior = val
+            break
+    if prior is None or prior == 0:
+        return None, None
+    pce_yoy = round((latest[1] / prior - 1) * 100, 2)
+    return pce_yoy, latest[0]
+
+
+def calc_fiscal_index(debt_gdp: float, deficit_gdp_raw: float, interest_burden_raw: float) -> dict:
+    """
+    Fiscal Pressure Index (0-100).
+    Components (老钱原文权重):
+      - debt/gdp    : weight 40   → (debt-50)/100 * 40
+      - deficit/gdp : weight 25   → (deficit-1)/9 * 25
+      - interest burden : weight 35 → (interest-5)/15 * 35
+    All sub-indices clamped 0-100.
+    """
+    d1 = max(0, min(40, max(0, (debt_gdp - 50) / 100 * 40))) if debt_gdp else 0
+    d2 = max(0, min(25, max(0, (deficit_gdp_raw - 1) / 9 * 25))) if deficit_gdp_raw is not None else 0
+    d3 = max(0, min(35, max(0, (interest_burden_raw - 5) / 15 * 35))) if interest_burden_raw is not None else 0
     score = round(d1 + d2 + d3, 1)
+
     if score < 40:
         zone = "normal"
     elif score < 60:
@@ -166,6 +228,37 @@ def percentile(value: float, history: list) -> float:
     return round(rank / len(sorted_hist) * 100, 1)
 
 
+def fetch_sge_premium() -> dict:
+    """
+    Fetch Shanghai Gold Exchange Au9999 price and compute premium over COMEX.
+    Returns {premium_pct, sge_cny, come_usd, fx_rate}.
+    Uses AKShare as data source (fallback to None if unavailable).
+    """
+    try:
+        import akshare as ak
+        # SGE Au9999 price in CNY/gram
+        sge = ak.sge_price()
+        sge_gram = float(sge.iloc[0]['price'])  # CNY/gram
+        # Convert to CNY/troy oz: 1 troy oz = 31.1035g
+        sge_cny = round(sge_gram * 31.1035, 2)
+        # Get USD/CNY rate
+        usd_cny = ak.currency_usd_cny()
+        fx = float(usd_cny.iloc[-1]['close'])
+        # COMEX gold price from yfinance
+        if HAS_YFINANCE:
+            ticker = yf.Ticker("GC=F")
+            hist = ticker.history(period="1d")
+            if not hist.empty:
+                come_usd = round(hist["Close"].iloc[-1], 2)
+                # Premium = (SGE_CNY - COME_USD * FX) / (COME_USD * FX) * 100
+                come_cny = come_usd * fx
+                premium = round((sge_cny - come_cny) / come_cny * 100, 2)
+                return {"premium_pct": premium, "sge_cny": sge_cny, "come_usd": come_usd, "fx_rate": fx}
+    except Exception as e:
+        print(f"    [WARN] SGE premium: {e}")
+    return None
+
+
 def main():
     api_key = os.environ.get("FRED_API_KEY", "")
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Fetching Gold Board data...")
@@ -182,8 +275,11 @@ def main():
     # ── FRED data ───────────────────────────────────────────────────────────
     fred_data = {}
     if api_key:
+        # For annual series (FYFENDA, FYINT, GFDEGDQ188S), 30 obs ≈ 30 years back
+        # For quarterly, 30 obs ≈ 7.5 years; for monthly, ≈ 2.5 years
+        annual_limit = 30
         for key, (series_id, unit, name) in FRED_SERIES.items():
-            val, date = fetch_fred_series(series_id, api_key)
+            val, date = fetch_fred_series(series_id, api_key, limit=annual_limit)
             if val is not None:
                 fred_data[key] = {"value": val, "date": date, "unit": unit}
                 print(f"    {key}: {val} ({date})")
@@ -217,19 +313,23 @@ def main():
     }
 
     # ── Layer data ───────────────────────────────────────────────────────────
+    # Fetch interest burden
+    interest_burden_val = fred_data.get("interest_burden", {}).get("value")
+
     result["layers"] = {
         "4_institutional": {
             "debt_gdp":      fred_data.get("debt_gdp", {}).get("value"),
             "deficit_gdp":   fred_data.get("deficit_gdp", {}).get("value"),
             "debt_date":     fred_data.get("debt_gdp", {}).get("date"),
             "deficit_date":  fred_data.get("deficit_gdp", {}).get("date"),
+            "interest_burden": interest_burden_val,
         },
         "3_macro": {
             "real_rate":       fred_data.get("real_rate", {}).get("value"),
             "inflation_exp":    fred_data.get("inflation_exp", {}).get("value"),
             "dxy":             fred_data.get("dxy", {}).get("value"),
             "financial_cond":  fred_data.get("financial_cond", {}).get("value"),
-            "core_pce":        fred_data.get("core_pce", {}).get("value"),
+            "core_pce":        None,  # filled below via PCE YoY
             "unemployment":    fred_data.get("unemployment", {}).get("value"),
         },
         "2_market": {
@@ -237,12 +337,19 @@ def main():
         },
     }
 
+    # ── PCE YoY (fix: PCEPI is price index, not %) ─────────────────────────
+    if api_key:
+        pce_yoy, pce_date = fetch_pce_yoy(api_key)
+        if pce_yoy is not None:
+            result["layers"]["3_macro"]["core_pce"] = pce_yoy
+            print(f"    core_pce_yoy: {pce_yoy}% ({pce_date})")
+
     # ── Fiscal Pressure Index ───────────────────────────────────────────────
     debt_gdp = fred_data.get("debt_gdp", {}).get("value")
-    deficit_gdp = fred_data.get("deficit_gdp", {}).get("value")
-    result["fiscal_index"] = calc_fiscal_index(debt_gdp, deficit_gdp)
+    deficit_gdp_raw = fred_data.get("deficit_gdp", {}).get("value")
+    result["fiscal_index"] = calc_fiscal_index(debt_gdp, deficit_gdp_raw, interest_burden_val)
     result["fiscal_index"]["debt_gdp_raw"] = debt_gdp
-    result["fiscal_index"]["deficit_gdp_raw"] = deficit_gdp
+    result["fiscal_index"]["deficit_gdp_raw"] = deficit_gdp_raw
     print(f"    Fiscal Index: {result['fiscal_index']['score']} ({result['fiscal_index']['zone']})")
 
     # ── 2×2 Matrix ─────────────────────────────────────────────────────────
@@ -320,7 +427,11 @@ def main():
         },
     }
 
-    # ── Write output ────────────────────────────────────────────────────────
+    result["sge_premium"] = fetch_sge_premium()
+    if result["sge_premium"]:
+        print(f"    SGE premium: {result['sge_premium']['premium_pct']}% (SGE CNY={result['sge_premium']['sge_cny']})")
+
+    # ── Write output ───────────────────────────────────────────────────────
     with open(OUTPUT, "w") as f:
         json.dump(result, f, indent=2)
     print(f"[DONE] Gold board data → {OUTPUT}")

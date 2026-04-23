@@ -130,6 +130,13 @@ def build_html(data: dict) -> str:
     quad_signal = quad.get("signal", "neutral")
     quad_color = QUADRANT_COLORS.get((growth, inflation), "#f5f0e8")
 
+    # ── SGE Premium ─────────────────────────────────────────────────────────
+    sge = data.get("sge_premium") or {}
+    sge_premium = sge.get("premium_pct")
+    sge_cny = sge.get("sge_cny")
+    come_usd = sge.get("come_usd")
+    fx = sge.get("fx_rate")
+
     # ── Layer 3 macro values ────────────────────────────────────────────────
     macro = layers.get("3_macro", {})
     inst = layers.get("4_institutional", {})
@@ -375,11 +382,11 @@ def build_html(data: dict) -> str:
   <a href="/docs/" class="nav-back">← Home</a>
 </nav>
 
-<!-- ── Hero ── -->
+    <!-- ── Hero ── -->
 <div class="hero">
   <div class="hero-left">
     <div class="hero-ticker">GC=F · Gold Futures</div>
-    <div class="hero-name">USD / troy ounce · 实时</div>
+    <div class="hero-name">USD / troy ounce · 日更</div>
   </div>
   <div class="hero-right">
     <div class="hero-price">${fmt(gold_cur, '', 2) if gold_cur else '—'}</div>
@@ -387,6 +394,30 @@ def build_html(data: dict) -> str:
       {'+' if gold_change and gold_change >= 0 else ''}{fmt(gold_change, '', 2)} ({'+' if gold_chg_pct and gold_chg_pct >= 0 else ''}{fmt(gold_chg_pct, '%', 2)}%)
     </div>
     <div class="hero-updated">Updated {updated} · GitHub Actions 日更</div>
+  </div>
+</div>
+
+  <!-- ── Section: 全球地上存量 ── -->
+<div class="section-header">
+  <div class="section-title">全球地上黄金存量</div>
+  <div class="section-badge">制度层</div>
+</div>
+<div style="background:var(--card);padding:1.25rem 2rem;border-bottom:1px solid var(--border);display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:1rem;text-align:center">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center">
+    <div style="font-size:2rem;font-weight:700;color:var(--accent)">224,266</div>
+    <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">吨 · 全球地上存量</div>
+  </div>
+  <div>
+    <div style="font-size:1.5rem;font-weight:700;color:#d4af37">44%</div>
+    <div style="font-size:0.7rem;color:var(--muted)">金饰 · 98,677 吨</div>
+  </div>
+  <div>
+    <div style="font-size:1.5rem;font-weight:700;color:#d4af37">23%</div>
+    <div style="font-size:0.7rem;color:var(--muted)">投资 · 51,581 吨</div>
+  </div>
+  <div>
+    <div style="font-size:1.5rem;font-weight:700;color:#d4af37">18%</div>
+    <div style="font-size:0.7rem;color:var(--muted)">央行 · 40,368 吨</div>
   </div>
 </div>
 
@@ -416,8 +447,8 @@ def build_html(data: dict) -> str:
         <div>赤字 / GDP</div>
       </div>
       <div>
-        <div style="font-size:1rem;font-weight:700;color:var(--text)">{fmt(fi.get('components',{}).get('interest_burden'),'/100',1) if fi.get('components') else '—'}</div>
-        <div>利息压力指数</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--text)">{fmt(inst.get('interest_burden'),'%',1) if inst.get('interest_burden') else '—'}</div>
+        <div>利息/收入占比</div>
       </div>
     </div>
   </div>
@@ -477,6 +508,29 @@ def build_html(data: dict) -> str:
     <div class="topo-panel-date" id="panel-date"></div>
     <div class="topo-panel-signal" id="panel-signal"></div>
     <div class="topo-panel-desc" id="panel-desc"></div>
+  </div>
+</div>
+
+<!-- ── Section: 上海金溢价 ── -->
+<div class="section-header">
+  <div class="section-title">上海金 vs 国际金价 · 中国需求代理</div>
+  <div class="section-badge">市场层</div>
+</div>
+<div style="background:var(--card);padding:1.25rem 2rem;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:2rem;text-align:center">
+  <div>
+    <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-bottom:0.25rem">当前溢价</div>
+    <div style="font-size:2rem;font-weight:700;color:{'var(--up)' if sge_premium and sge_premium > 0 else 'var(--down)'}">{f'{sge_premium:+.1f}%' if sge_premium else '—'}</div>
+    <div style="font-size:0.7rem;color:var(--muted)">正值=中国买家溢价买入</div>
+  </div>
+  <div>
+    <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-bottom:0.25rem">上海金 SGE Au9999</div>
+    <div style="font-size:1.5rem;font-weight:700;color:var(--accent)">{f'¥{sge_cny:,.0f}/oz' if sge_cny else '—'}</div>
+    <div style="font-size:0.7rem;color:var(--muted)">CNY/troy oz</div>
+  </div>
+  <div>
+    <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-bottom:0.25rem">国际金 COMEX</div>
+    <div style="font-size:1.5rem;font-weight:700">{f'${come_usd:,.0f}/oz' if come_usd else '—'}</div>
+    <div style="font-size:0.7rem;color:var(--muted)">USD/troy oz · 汇率 {f'{fx:.2f}' if fx else '—'}</div>
   </div>
 </div>
 
@@ -575,14 +629,36 @@ def build_html(data: dict) -> str:
   <div class="card">
     <div class="card-label">赤字 / GDP</div>
     <div class="card-value" style="{'color:var(--down)' if inst.get('deficit_gdp') and inst.get('deficit_gdp') > 5 else 'color:var(--warn)'}">{fmt(inst.get('deficit_gdp'),'%',1) if inst.get('deficit_gdp') else '—'}</div>
-    <div class="card-sub">FYFSD · 财政缺口</div>
+    <div class="card-sub">FYFENDA · 年度财政赤字</div>
+  </div>
+</div>
+
+<!-- ── Institutional: 央行净购金 & 美元储备 ── -->
+<div class="section-header">
+  <div class="section-title">制度层 · 央行 &amp; 储备货币</div>
+  <div class="section-badge">制度层</div>
+</div>
+<div style="background:var(--card);padding:1.25rem 2rem;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border)">
+  <div class="card">
+    <div class="card-label">央行季度净购金</div>
+    <div class="card-value" style="color:var(--accent)">~1,000</div>
+    <div class="card-sub">吨 / 季度 · WGC</div>
+    <div class="card-signal" style="color:var(--up)">结构性买盘</div>
+    <div style="font-size:0.7rem;color:var(--muted);margin-top:0.25rem">2022年后年化千吨级别，与利率/金价脱敏</div>
+  </div>
+  <div class="card">
+    <div class="card-label">美元储备占比</div>
+    <div class="card-value" style="color:var(--accent)">57.8%</div>
+    <div class="card-sub">IMF COFER · 季度</div>
+    <div class="card-signal" style="color:var(--muted)">趋势下行</div>
+    <div style="font-size:0.7rem;color:var(--muted);margin-top:0.25rem">2000年高点72% → 当前57.8%</div>
   </div>
 </div>
 
 <footer>
   Gold Board · 基于老钱黄金看板框架复刻 · 纯静态 GitHub Pages
   <br>
-  数据来源: FRED · Yahoo Finance · CBOE · iShares GLD
+  数据来源: FRED · Yahoo Finance · WGC · IMF COFER
   · 框架参考: <a href="https://gold-board.betalpha.com/" target="_blank">gold-board.betalpha.com</a>
 </footer>
 
