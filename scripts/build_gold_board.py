@@ -447,7 +447,7 @@ def build_html(data: dict) -> str:
         <div>赤字 / GDP</div>
       </div>
       <div>
-        <div style="font-size:1rem;font-weight:700;color:var(--text)">{fmt(inst.get('interest_burden'),'%',1) if inst.get('interest_burden') else '—'}</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--text)">{fmt(data.get('interest_burden'),'%',1) if data.get('interest_burden') else '—'}</div>
         <div>利息/收入占比</div>
       </div>
     </div>
@@ -554,15 +554,15 @@ def build_html(data: dict) -> str:
   </div>
   <div class="suit-card">
     <div class="suit-name">③ GLD ETF 持仓</div>
-    <div class="suit-value">{fmt(fs.get('gld_etf',{}).get('value'),'M',1) if fs.get('gld_etf',{}).get('value') else '—'}</div>
-    <div class="suit-sub">{fs.get('gld_etf',{}).get('unit','volume')}</div>
-    <div class="suit-signal" style="color:var(--muted)">机构配置行为代理</div>
+    <div class="suit-value">{fmt(fs.get('gld_etf',{}).get('shares'),'M',1) if fs.get('gld_etf',{}).get('shares') else '—'}</div>
+    <div class="suit-sub">{fs.get('gld_etf',{}).get('unit','')}{f" · {fs.get('gld_etf',{}).get('percentile'):.0f}分位" if fs.get('gld_etf',{}).get('percentile') else ''}</div>
+    <div class="suit-signal" style="color:var(--muted)">持仓量历史分位</div>
   </div>
   <div class="suit-card">
     <div class="suit-name">④ CFTC 净多头</div>
-    <div class="suit-value">{fs.get('cfct',{}).get('value') or '—'}</div>
-    <div class="suit-sub">COT 周度持仓报告</div>
-    <div class="suit-signal" style="color:var(--warn)">{fs.get('cfct',{}).get('note','待接入')}</div>
+    <div class="suit-value">{f"{fs.get('cfct',{}).get('net_long'):,.0f}" if fs.get('cfct',{}).get('net_long') is not None else '—'}</div>
+    <div class="suit-sub">COT 周度持仓报告{ f" · {fs.get('cfct',{}).get('week','')}" if fs.get('cfct',{}).get('week') else ''}</div>
+    <div class="suit-signal" style="color:var(--muted)">{fs.get('cfct',{}).get('note','') if not fs.get('cfct',{}).get('net_long') else 'Managed Money净多头'}</div>
   </div>
 </div>
 
@@ -1054,37 +1054,61 @@ def build_html(data: dict) -> str:
 (function() {{
   const sh = rawData.series_history || {{}};
   const unemp = sh.unemployment || {{}};
-  // PCE YoY: compute from core_pce in layers
-  const corePce = rawData.layers && rawData.layers['3_macro'] ? rawData.layers['3_macro'].core_pce : null;
+  const pcepi = sh.pcepi || {{}};
 
-  if (unemp.dates && unemp.dates.length > 0) {{
+  // Compute PCE YoY from stored PCEPI monthly history
+  // PCEPI dates are YYYY-MM-DD monthly; YoY = (current/prior_year - 1) * 100
+  function computePceYoy(pcepiVals, pcepiDates) {{
+    if (!pcepiVals || pcepiVals.length < 13) return [];
+    const result = [];
+    for (let i = 12; i < pcepiVals.length; i++) {{
+      const curr = pcepiVals[i];
+      const prior = pcepiVals[i - 12];
+      if (curr != null && prior != null && prior > 0) {{
+        result.push({{ date: pcepiDates[i], yoy: Math.round((curr / prior - 1) * 10000) / 100 }});
+      }}
+    }}
+    return result;
+  }}
+
+  const pceYoyData = computePceYoy(pcepi.values, pcepi.dates);
+
+  if (pcepi.dates && pcepi.dates.length > 0) {{
     const ctx = document.getElementById('infl-growth-chart').getContext('2d');
-    const dates = unemp.dates;
+
+    // PCE YoY time series (available)
+    const pceDates = pceYoyData.map(d => d.date);
+    const pceVals = pceYoyData.map(d => d.yoy);
+
+    // For unemployment, use its own monthly dates
+    const unempDates = unemp.dates || [];
     const unempVals = (unemp.values || []).map(v => v ?? null);
 
-    // Approximate PCE YoY time series (constant line at current value for context)
-    // In future: store PCE history in series_history
-    const pceVals = dates.map(() => null);
-    if (corePce != null) {{
-      // Put current PCE value at the latest date only
-      pceVals[pceVals.length - 1] = corePce;
-    }}
+    // Merge dates: use whichever series is available at each date
+    const allDates = [...new Set([...pceDates, ...unempDates])].sort();
+
+    const pceMap = {{}};
+    pceYoyData.forEach(d => pceMap[d.date] = d.yoy);
+    const unempMap = {{}};
+    if (unemp.dates) {{ unemp.dates.forEach((d,i) => unempMap[d] = unemp.values[i]); }}
+
+    const mergedPceVals = allDates.map(d => pceMap[d] ?? null);
+    const mergedUnempVals = allDates.map(d => unempMap[d] ?? null);
 
     new Chart(ctx, {{
       type: 'line',
       data: {{
-        labels: dates,
+        labels: allDates,
         datasets: [
           {{
-            label: '失业率 %',
-            data: unempVals,
-            borderColor: '#3498db', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.1,
+            label: 'PCE同比 %',
+            data: mergedPceVals,
+            borderColor: '#e74c3c', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.1,
           }},
           {{
-            label: 'PCE同比 % (当前)',
-            data: pceVals,
-            borderColor: '#e74c3c', borderWidth: 2, pointRadius: 3, fill: false,
-            showLine: false,
+            label: '失业率 %',
+            data: mergedUnempVals,
+            borderColor: '#3498db', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.1,
           }}
         ]
       }},

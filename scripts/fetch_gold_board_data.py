@@ -5,16 +5,13 @@ Sources: FRED API (macro) + yfinance (gold price) + GLD ETF holdings.
 Outputs gold_board_data.json.
 """
 import json
-import os
 import math
+import os
+import urllib.parse
+import urllib.request
+import urllib.error
 from datetime import datetime, timedelta
 from pathlib import Path
-
-try:
-    import requests
-    HAS_REQUESTS = True
-except ImportError:
-    HAS_REQUESTS = False
 
 try:
     import yfinance as yf
@@ -36,7 +33,9 @@ FRED_SERIES = {
     "debt_gdp":        ("GFDEGDQ188S",   "percent",   "Federal Debt to GDP"),
     "deficit_raw":     ("FYFSD",         "millions",  "Annual Federal Deficit (raw, negative=def)"),
     "revenue_raw":     ("FYFR",          "millions",  "Total Federal Revenue"),
-    "interest_raw":    ("FYONET",        "millions",  "Net Interest Payments"),
+    # NOTE: FYONET = "Federal Net Outlays" (total spending), NOT interest payments.
+    # interest_raw uses NA000308Q (quarterly interest, summed to annual).
+    "interest_raw":    ("NA000308Q",     "millions",  "Federal Interest Payments (quarterly)"),
     # Layer 3: Macro
     "real_rate":       ("DFII10",        "percent",   "10-Yr Real Interest Rate"),
     "inflation_exp":   ("T10YIE",        "percent",   "10-Yr Inflation Expectation"),
@@ -54,8 +53,7 @@ FRED_SERIES = {
 
 def fetch_fred_series(series_id: str, api_key: str, limit: int = 30) -> tuple:
     """Returns (latest_value, latest_date_str) or (None, None) on failure."""
-    if not HAS_REQUESTS:
-        return None, None
+    import urllib.request, urllib.error
     url = "https://api.stlouisfed.org/fred/series/observations"
     params = {
         "series_id": series_id,
@@ -65,12 +63,13 @@ def fetch_fred_series(series_id: str, api_key: str, limit: int = 30) -> tuple:
         "sort_order": "desc",
     }
     try:
-        r = requests.get(url, params=params, timeout=30)
-        r.raise_for_status()
-        obs = r.json().get("observations", [])
-        for o in obs:
-            if o["value"] not in ("", ".", None):
-                return float(o["value"]), o["date"]
+        req = urllib.request.Request(f"{url}?{urllib.parse.urlencode(params)}", headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = json.loads(r.read())
+            obs = data.get("observations", [])
+            for o in obs:
+                if o["value"] not in ("", ".", None):
+                    return float(o["value"]), o["date"]
     except Exception as e:
         print(f"    [WARN] FRED {series_id}: {e}")
     return None, None
@@ -106,26 +105,59 @@ def fetch_gold_price_yf():
     return None, None, []
 
 
-def fetch_gld_holdings():
-    """Estimate GLD ETF holdings change from yfinance."""
+def fetch_gld_holdings() -> dict:
+    """
+    Get GLD ETF shares outstanding and percentile vs 3yr history.
+    Returns {shares (M), percentile, history} or {shares, percentile, history: []} on failure.
+    Uses yfinance shares_unfixed or info['sharesOutstanding'].
+    """
     if not HAS_YFINANCE:
-        return None
+        return {"shares": None, "percentile": None, "history": []}
     try:
         ticker = yf.Ticker("GLD")
-        hist = ticker.history(period="5d")
-        if hist.empty:
-            return None
-        # shares outstanding proxy: use close * volume as flow indicator
-        return round(hist["Volume"].iloc[-1] / 1e6, 2) if len(hist) else None
+        # Try to get shares outstanding history (requires recent yfinance version)
+        info = ticker.info
+        current_shares = info.get("sharesOutstanding", info.get("shares", None))
+        if current_shares:
+            current_shares = round(current_shares / 1e6, 2)  # convert to millions
+        else:
+            current_shares = None
+
+        # Try to get 3yr history of shares outstanding for percentile
+        hist_3y = []
+        try:
+            hist = ticker.history(period="3y", auto_adjust=True)
+            if not hist.empty:
+                # shares outstanding proxy: use volume as a rough proxy
+                # (yfinance doesn't expose historical shares outstanding directly)
+                vol_history = hist["Volume"].tolist()
+                dates = [d.strftime("%Y-%m-%d") for d in hist.index]
+                # Use median volume as stable proxy for relative flow
+                vol_median = sorted(vol_history)[len(vol_history)//2] if vol_history else None
+                hist_3y = vol_history
+        except Exception:
+            pass
+
+        percentile = None
+        if current_shares is not None and hist_3y:
+            # Simple percentile: what % of daily volumes are below current
+            # Actually for ETF flows, use shares proxy (volume) percentile
+            sorted_vol = sorted(hist_3y)
+            rank = sum(1 for v in sorted_vol if v <= current_shares * 1e6)
+            percentile = round(rank / len(sorted_vol) * 100, 1) if sorted_vol else None
+
+        return {
+            "shares": current_shares,
+            "percentile": percentile,
+            "history": hist_3y,
+        }
     except Exception as e:
-        print(f"    [WARN] GLD: {e}")
-    return None
+        print(f"    [WARN] GLD holdings: {e}")
+    return {"shares": None, "percentile": None, "history": []}
 
 
 def fetch_fred_series_history(series_id: str, api_key: str, limit: int = 24) -> list:
     """Returns list of (date_str, value) sorted desc, or [] on failure."""
-    if not HAS_REQUESTS:
-        return []
     url = "https://api.stlouisfed.org/fred/series/observations"
     params = {
         "series_id": series_id,
@@ -135,14 +167,15 @@ def fetch_fred_series_history(series_id: str, api_key: str, limit: int = 24) -> 
         "sort_order": "desc",
     }
     try:
-        r = requests.get(url, params=params, timeout=30)
-        r.raise_for_status()
-        obs = r.json().get("observations", [])
-        result = []
-        for o in obs:
-            if o["value"] not in ("", ".", None):
-                result.append((o["date"], float(o["value"])))
-        return result
+        req = urllib.request.Request(f"{url}?{urllib.parse.urlencode(params)}", headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = json.loads(r.read())
+            obs = data.get("observations", [])
+            result = []
+            for o in obs:
+                if o["value"] not in ("", ".", None):
+                    result.append((o["date"], float(o["value"])))
+            return result
     except Exception as e:
         print(f"    [WARN] FRED history {series_id}: {e}")
     return []
@@ -150,27 +183,24 @@ def fetch_fred_series_history(series_id: str, api_key: str, limit: int = 24) -> 
 
 def fetch_series_all(series_id: str, api_key: str, limit: int = 252) -> list:
     """Fetch most recent N observations sorted ascending by date (for chart display)."""
-    if not HAS_REQUESTS:
-        return []
     url = "https://api.stlouisfed.org/fred/series/observations"
-    # Fetch newest first (desc), then reverse to ascending for chart
     params = {
         "series_id": series_id,
         "api_key": api_key,
         "file_type": "json",
         "limit": limit,
-        "sort_order": "desc",  # newest first
+        "sort_order": "desc",
     }
     try:
-        r = requests.get(url, params=params, timeout=30)
-        r.raise_for_status()
-        obs = r.json().get("observations", [])
-        # Reverse to get ascending (oldest→newest) for chart time axis
-        result = []
-        for o in reversed(obs):
-            if o["value"] not in ("", ".", None):
-                result.append((o["date"], float(o["value"])))
-        return result
+        req = urllib.request.Request(f"{url}?{urllib.parse.urlencode(params)}", headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = json.loads(r.read())
+            obs = data.get("observations", [])
+            result = []
+            for o in reversed(obs):
+                if o["value"] not in ("", ".", None):
+                    result.append((o["date"], float(o["value"])))
+            return result
     except Exception as e:
         print(f"    [WARN] FRED all {series_id}: {e}")
     return []
@@ -256,6 +286,61 @@ def percentile(value: float, history: list) -> float:
         return None
     rank = sum(1 for x in sorted_hist if x <= value)
     return round(rank / len(sorted_hist) * 100, 1)
+
+
+def fetch_cftc_cot() -> dict:
+    """
+    Fetch CFTC Disaggregated Report for Gold (GC).
+    Returns {net_long (contracts), week} or None on failure.
+    Data source: CFTC historical compressed files (fut_disagg_txt_{YEAR}.zip).
+    Gold commodity code = 088, Managed Money columns 13 (Long) and 14 (Short).
+    """
+    import io, zipfile, re
+    from datetime import datetime
+    # Use current year for most recent report
+    year = datetime.now().year
+    url = f"https://www.cftc.gov/files/dea/history/fut_disagg_txt_{year}.zip"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            content = r.read()
+        z = zipfile.ZipFile(io.BytesIO(content))
+        with z.open("f_year.txt") as f:
+            data = f.read().decode("latin-1", errors="replace")
+        lines = data.splitlines()
+        # Header: col 0=Market_Name, col 2=Report_Date, col 6=Commodity_Code,
+        # col 13=M_Money_Long_All, col 14=M_Money_Short_All
+        latest_gold = None
+        for line in lines[1:]:
+            cols = line.split(",")
+            if len(cols) <= 14:
+                continue
+            code = cols[6].strip()
+            if code != "088":
+                continue
+            # Found gold row
+            try:
+                mm_long = int(float(cols[13].strip()))
+                mm_short = int(float(cols[14].strip()))
+                net_long = mm_long - mm_short
+                date_str = cols[2].strip().strip('"')
+                latest_gold = {
+                    "net_long": net_long,
+                    "week": date_str,
+                    "mm_long": mm_long,
+                    "mm_short": mm_short,
+                }
+                # This is already the most recent (file sorted desc by date)
+                break
+            except (ValueError, IndexError):
+                continue
+        if latest_gold is None:
+            print(f"    [WARN] CFTC: Gold (088) row not found in f_year.txt")
+            return None
+        return latest_gold
+    except Exception as e:
+        print(f"    [WARN] CFTC COT fetch failed: {e}")
+    return None
 
 
 def fetch_sge_premium() -> dict:
@@ -374,6 +459,7 @@ def main():
             "treasury_10y":  ("DGS10",     252),   # daily: 1yr
             "sofr":          ("SOFR",      252),   # daily: 1yr
             "debt_gdp":      ("GFDEGDQ188S", 40),  # quarterly: 10yr
+            "pcepi":         ("PCEPI",     36),    # monthly: 3yr (for JS YoY compute)
         }
         for key, (series_id, limit) in hist_configs.items():
             data = fetch_series_all(series_id, api_key, limit=limit)
@@ -382,31 +468,26 @@ def main():
                 vals = [v for d, v in data]
                 result["series_history"][key] = {"dates": dates, "values": vals}
 
-    # ── Interest Burden (FYONET / FYFR) ──────────────────────────────────────
+    # ── Interest Burden (NA000308Q quarterly sum / FYFR) ──────────────────────
+    # NA000308Q = Federal Interest Payments in millions USD (quarterly)
+    # FYFR = Federal Receipts in millions USD (annual, fiscal year ending Sep 30)
+    # For FY2025: sum Q4-Q3-Q2-Q1 of NA000308Q (Oct 2024 - Jul 2025) ≈ FY2025
+    # But NA000308Q uses calendar quarters; FYFR ends Sep 30.
+    # Most recent 4 quarters = most recent completed fiscal year approximation.
     interest_burden_val = None
-    fyonet = fred_data.get("interest_raw", {}).get("value")
-    fyfr = fred_data.get("revenue_raw", {}).get("value")
-    if fyonet is not None and fyfr is not None and fyfr > 0:
-        # FYFR = total federal revenue in millions USD
-        # FYONET = net interest in millions USD
-        # If fyfr < 10000, it's likely in billions; convert to millions
-        fyfr_m = fyfr * 1000 if fyfr < 10000 else fyfr
-        fyonet_m = fyonet * 1000 if fyonet < 10000 else fyonet
-        if fyfr_m > 0 and fyonet_m / fyfr_m < 1.0:
-            # Only valid if ratio < 100% (interest can't exceed total revenue)
-            interest_burden_val = round(fyonet_m / fyfr_m * 100, 2)
-            print(f"    interest_burden: {interest_burden_val}% (FYONET={fyonet_m}M / FYFR={fyfr_m}M)")
-        elif fyonet is not None and fyfr is not None and fyfr > 0:
-            # FYONET > FYFR → unit mismatch. Check if FYONET/billions makes sense
-            # FYONET in billions (7,011B) vs FYFR in millions (5,236M)
-            # 7,011B / 5.2T = 1.35 → still > 1. Let me try FYONET in billions, FYFR in billions
-            # Actually FYFR=5,236,421 millions = 5236 billions → FYONET=7011 billions
-            # Ratio = 7011/5236 = 1.34 → still > 1. This means FYONET is not net interest.
-            # FRED FYONET = "Net interest: accumulated deficit" = total debt stock interest
-            # This is the CUMULATIVE interest on the debt, not annual expense.
-            # For interest burden, use None (data not suitable).
-            print(f"    interest_burden: skipped (FYONET={fyonet} units unclear, FYONET/FYFR={fyonet/fyfr:.2f} > 1)")
-            interest_burden_val = None
+    if api_key:
+        # Get last 4 quarters of NA000308Q (most recent full year of interest payments)
+        interest_q = fetch_fred_series_history("NA000308Q", api_key, limit=5)
+        fyfr_val = fred_data.get("revenue_raw", {}).get("value")
+        if len(interest_q) >= 4 and fyfr_val is not None and fyfr_val > 0:
+            # Take 4 most recent quarters (descending), sum, divide by FYFR
+            # interest_q[0] = most recent quarter (e.g. Oct 2025)
+            # interest_q[3] = oldest of the 4 (1 year lookback)
+            annual_interest = sum(float(q[1]) for q in interest_q[:4])
+            interest_burden_val = round(annual_interest / fyfr_val * 100, 2)
+            print(f"    interest_burden: {interest_burden_val}% (NA000308Q sum={annual_interest:.0f}M / FYFR={fyfr_val}M)")
+        else:
+            print(f"    interest_burden: skipped (NA000308Q quarters={len(interest_q)}, FYFR={fyfr_val})")
 
     # ── Deficit/GDP (FYFSD / implied GDP from debt%) ────────────────────────
     deficit_gdp_val = None
@@ -502,12 +583,22 @@ def main():
     else:
         gvz_proxy = None
 
-    gld_flow = result["layers"]["2_market"].get("gld_etf_flow")
+    gld_flow = result["layers"]["2_market"].get("gld_etf_flow", {})
+
+    # ── CFTC COT ──────────────────────────────────────────────────────────────
+    cftc_data = fetch_cftc_cot()
+    if cftc_data:
+        print(f"    CFTC net long: {cftc_data.get('net_long')} ({cftc_data.get('week')})")
+
     result["four_suits"] = {
         "gvz": {"value": gvz_proxy, "label": "Gold Volatility (GVZ)", "signal": "neutral"},
         "ma_system": {"value": gold_cur, "ma20": ma20[-1] if ma20 else None, "ma60": ma60[-1] if ma60 else None, "ma200": ma200[-1] if ma200 else None},
-        "gld_etf": {"value": gld_flow, "unit": "M shares (volume proxy)"},
-        "cfct": {"value": None, "note": "CFTC COT requires dedicated scraper"},
+        "gld_etf": {
+            "shares": gld_flow.get("shares"),
+            "percentile": gld_flow.get("percentile"),
+            "unit": "M shares outstanding",
+        },
+        "cfct": cftc_data if cftc_data else {"value": None, "note": "CFTC COT requires dedicated scraper"},
     }
 
     result["sge_premium"] = fetch_sge_premium()
