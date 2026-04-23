@@ -585,6 +585,98 @@ def build_html(data: dict) -> str:
   </div>
 </div>
 
+<!-- ── Section: 历史洞察 · 对数同比 ── -->
+<div class="section-header">
+  <div class="section-title">历史洞察 · 金价对数同比</div>
+  <div class="section-badge">分析层</div>
+</div>
+<div class="chart-wrap">
+  <div class="chart-header">
+    <div class="chart-title">ln(Pt) - ln(Pt-252) · 交易日同比 %</div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#f5c518"></div>对数同比</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#27ae60"></div>零线</div>
+    </div>
+  </div>
+  <div class="chart-canvas-wrap">
+    <canvas id="log-yoy-chart"></canvas>
+  </div>
+</div>
+
+<!-- ── Section: 机会成本 ── -->
+<div class="section-header">
+  <div class="section-title">机会成本 · 实际利率 vs 通胀预期 vs 美元</div>
+  <div class="section-badge">宏观层</div>
+</div>
+<div class="chart-wrap">
+  <div class="chart-header">
+    <div class="chart-title">DFII10 (实际利率) · T10YIE (通胀预期) · DXY指数 · 日频</div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#2ecc71"></div>实际利率</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>通胀预期</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#9b59b6"></div>DXY (右轴)</div>
+    </div>
+  </div>
+  <div class="chart-canvas-wrap">
+    <canvas id="opp-cost-chart"></canvas>
+  </div>
+</div>
+
+<!-- ── Section: 美元与流动性 ── -->
+<div class="section-header">
+  <div class="section-title">美元与流动性 · DXY · NFCI · SOFR</div>
+  <div class="section-badge">宏观层</div>
+</div>
+<div class="chart-wrap">
+  <div class="chart-header">
+    <div class="chart-title">DTWEXBGS (DXY) · NFCI (金融条件) · SOFR (联邦基金利率) · 日频</div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#9b59b6"></div>DXY</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3498db"></div>NFCI</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e67e22"></div>SOFR (右轴)</div>
+    </div>
+  </div>
+  <div class="chart-canvas-wrap">
+    <canvas id="usd-liab-chart"></canvas>
+  </div>
+</div>
+
+<!-- ── Section: 通胀与增长 ── -->
+<div class="section-header">
+  <div class="section-title">通胀与增长 · PCE同比 · 失业率</div>
+  <div class="section-badge">宏观层</div>
+</div>
+<div class="chart-wrap">
+  <div class="chart-header">
+    <div class="chart-title">PCEPI YoY (%) · UNRATE (%) · 月频</div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>PCE同比</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3498db"></div>失业率</div>
+    </div>
+  </div>
+  <div class="chart-canvas-wrap">
+    <canvas id="infl-growth-chart"></canvas>
+  </div>
+</div>
+
+<!-- ── Section: 财政与信用 ── -->
+<div class="section-header">
+  <div class="section-title">财政与信用 · 债务 & 赤字趋势</div>
+  <div class="section-badge">制度层</div>
+</div>
+<div class="chart-wrap">
+  <div class="chart-header">
+    <div class="chart-title">GFDEGDQ188S (债务/GDP) · FYFSD (赤字/GDP估算) · 季度</div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#c0392b"></div>债务/GDP</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e67e22"></div>赤字/GDP估算</div>
+    </div>
+  </div>
+  <div class="chart-canvas-wrap">
+    <canvas id="fiscal-chart"></canvas>
+  </div>
+</div>
+
 <!-- ── Macro indicators ── -->
 <div class="section-header">
   <div class="section-title">宏观指标一览</div>
@@ -629,7 +721,17 @@ def build_html(data: dict) -> str:
   <div class="card">
     <div class="card-label">赤字 / GDP</div>
     <div class="card-value" style="{'color:var(--down)' if inst.get('deficit_gdp') and inst.get('deficit_gdp') > 5 else 'color:var(--warn)'}">{fmt(inst.get('deficit_gdp'),'%',1) if inst.get('deficit_gdp') else '—'}</div>
-    <div class="card-sub">FYFENDA · 年度财政赤字</div>
+    <div class="card-sub">FYFSD · 年度财政赤字</div>
+  </div>
+  <div class="card">
+    <div class="card-label">SOFR</div>
+    <div class="card-value">{fmt(macro.get('sofr'),'%',2) if macro.get('sofr') is not None else '—'}</div>
+    <div class="card-sub">担保隔夜融资利率</div>
+  </div>
+  <div class="card">
+    <div class="card-label">10Y 国债</div>
+    <div class="card-value">{fmt(macro.get('treasury_10y'),'%',2) if macro.get('treasury_10y') is not None else '—'}</div>
+    <div class="card-sub">DGS10 · 名义收益率</div>
   </div>
 </div>
 
@@ -752,6 +854,320 @@ def build_html(data: dict) -> str:
       }}
     }}
   }});
+}})();
+
+// ─── Panel 1: Log YoY Chart ────────────────────────────────────────────────────
+(function() {{
+  const sh = rawData.series_history || {{}};
+  const logYoy = sh.gold_log_yoy || {{}};
+  const logDates = logYoy.dates || [];
+  const logVals = (logYoy.values || []).map(v => v ?? null);
+
+  if (logDates.length > 0) {{
+    const ctx = document.getElementById('log-yoy-chart').getContext('2d');
+    // Color each point green/red based on sign
+    const colors = logVals.map(v => v == null ? 'transparent' : v >= 0 ? '#27ae60' : '#e74c3c');
+    new Chart(ctx, {{
+      type: 'line',
+      data: {{
+        labels: logDates,
+        datasets: [
+          {{
+            label: '对数同比 %',
+            data: logVals,
+            borderColor: '#f5c518',
+            backgroundColor: logVals.map(v => v == null ? 'transparent' : v >= 0 ? 'rgba(39,174,96,0.15)' : 'rgba(231,76,60,0.15)'),
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: true,
+            tension: 0.1,
+            segment: {{
+              borderColor: ctx => {{
+                const idx = ctx.p0DataIndex;
+                return logVals[idx] >= 0 ? '#27ae60' : '#e74c3c';
+              }}
+            }}
+          }},
+          {{
+            label: '零线',
+            data: logDates.map(() => 0),
+            borderColor: 'rgba(100,100,100,0.3)',
+            borderWidth: 1,
+            borderDash: [5, 5],
+            pointRadius: 0,
+            fill: false,
+          }}
+        ]
+      }},
+      options: {{
+        responsive: true, maintainAspectRatio: false,
+        interaction: {{ mode: 'index', intersect: false }},
+        plugins: {{
+          legend: {{ display: false }},
+          tooltip: {{
+            backgroundColor: 'rgba(17,17,24,0.95)', titleColor: '#e0e0e0', bodyColor: '#e0e0e0',
+            borderColor: '#1e1e2a', borderWidth: 1, padding: 12,
+            callbacks: {{
+              label: ctx2 => {{
+                const v = ctx2.parsed.y;
+                return v != null ? (v >= 0 ? '↑ ' : '↓ ') + Math.abs(v).toFixed(1) + '%' : '—';
+              }}
+            }}
+          }}
+        }},
+        scales: {{
+          x: {{ type: 'category', ticks: {{ color: '#666', maxTicksLimit: 10, maxRotation: 0, font: {{ size: 11 }} }}, grid: {{ color: '#d5cdc2' }} }},
+          y: {{ ticks: {{ color: '#666', font: {{ size: 11 }}, callback: v => v + '%' }}, grid: {{ color: '#d5cdc2' }} }}
+        }}
+      }}
+    }});
+  }}
+}})();
+
+// ─── Panel 2: Opportunity Cost Chart ──────────────────────────────────────────
+(function() {{
+  const sh = rawData.series_history || {{}};
+  const rr = sh.real_rate || {{}};
+  const ie = sh.inflation_exp || {{}};
+  const dxy = sh.dxy || {{}};
+
+  if (rr.dates && rr.dates.length > 0) {{
+    const ctx = document.getElementById('opp-cost-chart').getContext('2d');
+    const dates = rr.dates; // use real_rate dates as master
+
+    // Align series to real_rate dates
+    const rrVals = rr.values || [];
+    const ieMap = {{}};
+    if (ie.dates) {{ ie.dates.forEach((d,i) => ieMap[d] = ie.values[i]); }}
+    const dxyMap = {{}};
+    if (dxy.dates) {{ dxy.dates.forEach((d,i) => dxyMap[d] = dxy.values[i]); }}
+
+    const ieVals = dates.map(d => ieMap[d] ?? null);
+    const dxyVals = dates.map(d => dxyMap[d] ?? null);
+
+    new Chart(ctx, {{
+      type: 'line',
+      data: {{
+        labels: dates,
+        datasets: [
+          {{
+            label: '实际利率 %',
+            data: rrVals.map(v => v ?? null),
+            borderColor: '#2ecc71', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.1, yAxisID: 'y',
+          }},
+          {{
+            label: '通胀预期 %',
+            data: ieVals,
+            borderColor: '#e74c3c', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.1, yAxisID: 'y',
+          }},
+          {{
+            label: 'DXY',
+            data: dxyVals,
+            borderColor: '#9b59b6', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.1,
+            borderDash: [4, 4], yAxisID: 'y2',
+          }}
+        ]
+      }},
+      options: {{
+        responsive: true, maintainAspectRatio: false,
+        interaction: {{ mode: 'index', intersect: false }},
+        plugins: {{
+          legend: {{ display: false }},
+          tooltip: {{
+            backgroundColor: 'rgba(17,17,24,0.95)', titleColor: '#e0e0e0', bodyColor: '#e0e0e0',
+            borderColor: '#1e1e2a', borderWidth: 1, padding: 12,
+          }}
+        }},
+        scales: {{
+          x: {{ type: 'category', ticks: {{ color: '#666', maxTicksLimit: 10, maxRotation: 0, font: {{ size: 11 }} }}, grid: {{ color: '#d5cdc2' }} }},
+          y: {{ position: 'left', ticks: {{ color: '#2ecc71', font: {{ size: 11 }}, callback: v => v + '%' }}, grid: {{ color: '#d5cdc2' }} }},
+          y2: {{ position: 'right', ticks: {{ color: '#9b59b6', font: {{ size: 11 }} }}, grid: {{ drawOnChartArea: false }} }}
+        }}
+      }}
+    }});
+  }}
+}})();
+
+// ─── Panel 3: USD & Liquidity Chart ───────────────────────────────────────────
+(function() {{
+  const sh = rawData.series_history || {{}};
+  const dxy = sh.dxy || {{}};
+  const nfci = sh.nfci || {{}};
+  const sofr = sh.sofr || {{}};
+
+  if (dxy.dates && dxy.dates.length > 0) {{
+    const ctx = document.getElementById('usd-liab-chart').getContext('2d');
+    const dates = dxy.dates;
+
+    const nfciMap = {{}};
+    if (nfci.dates) {{ nfci.dates.forEach((d,i) => nfciMap[d] = nfci.values[i]); }}
+    const sofrMap = {{}};
+    if (sofr.dates) {{ sofr.dates.forEach((d,i) => sofrMap[d] = sofr.values[i]); }}
+
+    const nfciVals = dates.map(d => nfciMap[d] ?? null);
+    const sofrVals = dates.map(d => sofrMap[d] ?? null);
+
+    new Chart(ctx, {{
+      type: 'line',
+      data: {{
+        labels: dates,
+        datasets: [
+          {{
+            label: 'DXY',
+            data: (dxy.values || []).map(v => v ?? null),
+            borderColor: '#9b59b6', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.1, yAxisID: 'y',
+          }},
+          {{
+            label: 'NFCI',
+            data: nfciVals,
+            borderColor: '#3498db', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.1, yAxisID: 'y',
+          }},
+          {{
+            label: 'SOFR %',
+            data: sofrVals,
+            borderColor: '#e67e22', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.1,
+            borderDash: [4, 4], yAxisID: 'y2',
+          }}
+        ]
+      }},
+      options: {{
+        responsive: true, maintainAspectRatio: false,
+        interaction: {{ mode: 'index', intersect: false }},
+        plugins: {{
+          legend: {{ display: false }},
+          tooltip: {{
+            backgroundColor: 'rgba(17,17,24,0.95)', titleColor: '#e0e0e0', bodyColor: '#e0e0e0',
+            borderColor: '#1e1e2a', borderWidth: 1, padding: 12,
+          }}
+        }},
+        scales: {{
+          x: {{ type: 'category', ticks: {{ color: '#666', maxTicksLimit: 10, maxRotation: 0, font: {{ size: 11 }} }}, grid: {{ color: '#d5cdc2' }} }},
+          y: {{ position: 'left', ticks: {{ color: '#9b59b6', font: {{ size: 11 }} }}, grid: {{ color: '#d5cdc2' }} }},
+          y2: {{ position: 'right', ticks: {{ color: '#e67e22', font: {{ size: 11 }}, callback: v => v + '%' }}, grid: {{ drawOnChartArea: false }} }}
+        }}
+      }}
+    }});
+  }}
+}})();
+
+// ─── Panel 4: Inflation & Growth Chart ────────────────────────────────────────
+(function() {{
+  const sh = rawData.series_history || {{}};
+  const unemp = sh.unemployment || {{}};
+  // PCE YoY: compute from core_pce in layers
+  const corePce = rawData.layers && rawData.layers['3_macro'] ? rawData.layers['3_macro'].core_pce : null;
+
+  if (unemp.dates && unemp.dates.length > 0) {{
+    const ctx = document.getElementById('infl-growth-chart').getContext('2d');
+    const dates = unemp.dates;
+    const unempVals = (unemp.values || []).map(v => v ?? null);
+
+    // Approximate PCE YoY time series (constant line at current value for context)
+    // In future: store PCE history in series_history
+    const pceVals = dates.map(() => null);
+    if (corePce != null) {{
+      // Put current PCE value at the latest date only
+      pceVals[pceVals.length - 1] = corePce;
+    }}
+
+    new Chart(ctx, {{
+      type: 'line',
+      data: {{
+        labels: dates,
+        datasets: [
+          {{
+            label: '失业率 %',
+            data: unempVals,
+            borderColor: '#3498db', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.1,
+          }},
+          {{
+            label: 'PCE同比 % (当前)',
+            data: pceVals,
+            borderColor: '#e74c3c', borderWidth: 2, pointRadius: 3, fill: false,
+            showLine: false,
+          }}
+        ]
+      }},
+      options: {{
+        responsive: true, maintainAspectRatio: false,
+        interaction: {{ mode: 'index', intersect: false }},
+        plugins: {{
+          legend: {{ display: false }},
+          tooltip: {{
+            backgroundColor: 'rgba(17,17,24,0.95)', titleColor: '#e0e0e0', bodyColor: '#e0e0e0',
+            borderColor: '#1e1e2a', borderWidth: 1, padding: 12,
+            callbacks: {{
+              label: ctx2 => {{
+                const v = ctx2.parsed.y;
+                return v != null ? ctx2.dataset.label.split(' ')[0] + ': ' + v.toFixed(1) + '%' : '';
+              }}
+            }}
+          }}
+        }},
+        scales: {{
+          x: {{ type: 'category', ticks: {{ color: '#666', maxTicksLimit: 10, maxRotation: 0, font: {{ size: 11 }} }}, grid: {{ color: '#d5cdc2' }} }},
+          y: {{ ticks: {{ color: '#666', font: {{ size: 11 }}, callback: v => v + '%' }}, grid: {{ color: '#d5cdc2' }} }}
+        }}
+      }}
+    }});
+  }}
+}})();
+
+// ─── Panel 5: Fiscal Trends Chart ─────────────────────────────────────────────
+(function() {{
+  const sh = rawData.series_history || {{}};
+  const debt = sh.debt_gdp || {{}};
+  const fiscal = rawData.fiscal_index || {{}};
+  const deficitRaw = fiscal.deficit_gdp_raw;
+
+  if (debt.dates && debt.dates.length > 0) {{
+    const ctx = document.getElementById('fiscal-chart').getContext('2d');
+    const dates = debt.dates;
+    const debtVals = (debt.values || []).map(v => v ?? null);
+    // deficit_gdp is a single current value — show as dashed reference line
+    const deficitVals = dates.map((_, i) => i === dates.length - 1 && deficitRaw != null ? deficitRaw : null);
+
+    new Chart(ctx, {{
+      type: 'line',
+      data: {{
+        labels: dates,
+        datasets: [
+          {{
+            label: '债务/GDP %',
+            data: debtVals,
+            borderColor: '#c0392b', borderWidth: 2, pointRadius: 2, fill: false, tension: 0.1,
+          }},
+          {{
+            label: '赤字/GDP估算 %',
+            data: deficitVals,
+            borderColor: '#e67e22', borderWidth: 2, pointRadius: 4, fill: false,
+            showLine: false,
+          }}
+        ]
+      }},
+      options: {{
+        responsive: true, maintainAspectRatio: false,
+        interaction: {{ mode: 'index', intersect: false }},
+        plugins: {{
+          legend: {{ display: false }},
+          tooltip: {{
+            backgroundColor: 'rgba(17,17,24,0.95)', titleColor: '#e0e0e0', bodyColor: '#e0e0e0',
+            borderColor: '#1e1e2a', borderWidth: 1, padding: 12,
+            callbacks: {{
+              label: ctx2 => {{
+                const v = ctx2.parsed.y;
+                return v != null ? ctx2.dataset.label + ': ' + v.toFixed(1) + '%' : '';
+              }}
+            }}
+          }}
+        }},
+        scales: {{
+          x: {{ type: 'category', ticks: {{ color: '#666', maxTicksLimit: 10, maxRotation: 0, font: {{ size: 11 }} }}, grid: {{ color: '#d5cdc2' }} }},
+          y: {{ ticks: {{ color: '#666', font: {{ size: 11 }}, callback: v => v + '%' }}, grid: {{ color: '#d5cdc2' }} }}
+        }}
+      }}
+    }});
+  }}
 }})();
 
 // ─── Topology Graph ──────────────────────────────────────────────────────────

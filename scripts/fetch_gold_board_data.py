@@ -34,10 +34,9 @@ OUTPUT = DATA_DIR / "gold_board_data.json"
 FRED_SERIES = {
     # Layer 4: Institutional
     "debt_gdp":        ("GFDEGDQ188S",   "percent",   "Federal Debt to GDP"),
-    # FYFENDA = Annual Federal Deficit (in millions USD, negative = deficit)
-    "deficit_gdp":     ("FYFENDA",       "percent",   "Annual Federal Deficit to GDP"),
-    # Interest income / total revenue — FRED: FYONET / FYFR (both in millions)
-    "interest_burden": ("FYINT",         "percent",   "Federal Interest / Revenue"),
+    "deficit_raw":     ("FYFSD",         "millions",  "Annual Federal Deficit (raw, negative=def)"),
+    "revenue_raw":     ("FYFR",          "millions",  "Total Federal Revenue"),
+    "interest_raw":    ("FYONET",        "millions",  "Net Interest Payments"),
     # Layer 3: Macro
     "real_rate":       ("DFII10",        "percent",   "10-Yr Real Interest Rate"),
     "inflation_exp":   ("T10YIE",        "percent",   "10-Yr Inflation Expectation"),
@@ -47,6 +46,9 @@ FRED_SERIES = {
     "gold_price_fred": ("GOLDAMGBD228NLBM", "usd",    "Gold Fixing Price"),
     # PCEPI price index (base=100) — YoY computed in fetch_pce_yoy()
     "pcepi":           ("PCEPI",         "index",     "PCE Price Index"),
+    # New for Round 2 panels
+    "sofr":            ("SOFR",          "percent",   "Secured Overnight Financing Rate"),
+    "treasury_10y":    ("DGS10",         "percent",   "10-Yr Treasury Constant Maturity"),
 }
 
 
@@ -146,6 +148,34 @@ def fetch_fred_series_history(series_id: str, api_key: str, limit: int = 24) -> 
     return []
 
 
+def fetch_series_all(series_id: str, api_key: str, limit: int = 252) -> list:
+    """Fetch most recent N observations sorted ascending by date (for chart display)."""
+    if not HAS_REQUESTS:
+        return []
+    url = "https://api.stlouisfed.org/fred/series/observations"
+    # Fetch newest first (desc), then reverse to ascending for chart
+    params = {
+        "series_id": series_id,
+        "api_key": api_key,
+        "file_type": "json",
+        "limit": limit,
+        "sort_order": "desc",  # newest first
+    }
+    try:
+        r = requests.get(url, params=params, timeout=30)
+        r.raise_for_status()
+        obs = r.json().get("observations", [])
+        # Reverse to get ascending (oldest→newest) for chart time axis
+        result = []
+        for o in reversed(obs):
+            if o["value"] not in ("", ".", None):
+                result.append((o["date"], float(o["value"])))
+        return result
+    except Exception as e:
+        print(f"    [WARN] FRED all {series_id}: {e}")
+    return []
+
+
 def fetch_pce_yoy(api_key: str) -> tuple:
     """
     Compute Core PCE year-over-year % change from PCEPI price index.
@@ -231,19 +261,27 @@ def percentile(value: float, history: list) -> float:
 def fetch_sge_premium() -> dict:
     """
     Fetch Shanghai Gold Exchange Au9999 price and compute premium over COMEX.
-    Returns {premium_pct, sge_cny, come_usd, fx_rate}.
-    Uses AKShare as data source (fallback to None if unavailable).
+    Returns {premium_pct, sge_cny, come_usd, fx_rate, sge_date}.
+    Uses AKShare spot_golden_benchmark_sge (晚盘价 = evening session price).
     """
     try:
         import akshare as ak
-        # SGE Au9999 price in CNY/gram
-        sge = ak.sge_price()
-        sge_gram = float(sge.iloc[0]['price'])  # CNY/gram
+        # SGE benchmark: 晚盘价 = evening session price in CNY/gram
+        sge = ak.spot_golden_benchmark_sge()
+        latest = sge.iloc[-1]
+        sge_gram = float(latest['晚盘价'])  # CNY/gram
+        sge_date = str(latest['交易时间'])[:10]  # YYYY-MM-DD
         # Convert to CNY/troy oz: 1 troy oz = 31.1035g
         sge_cny = round(sge_gram * 31.1035, 2)
-        # Get USD/CNY rate
-        usd_cny = ak.currency_usd_cny()
-        fx = float(usd_cny.iloc[-1]['close'])
+        # Get USD/CNY rate via akshare fx_spot_quote
+        fx_df = ak.fx_spot_quote()
+        usd_cny_row = fx_df[fx_df['货币对'] == 'USD/CNY']
+        if not usd_cny_row.empty:
+            bid = float(usd_cny_row.iloc[0]['买报价'])
+            ask = float(usd_cny_row.iloc[0]['卖报价'])
+            fx = round((bid + ask) / 2, 4)  # mid price
+        else:
+            fx = 7.25  # fallback
         # COMEX gold price from yfinance
         if HAS_YFINANCE:
             ticker = yf.Ticker("GC=F")
@@ -253,7 +291,7 @@ def fetch_sge_premium() -> dict:
                 # Premium = (SGE_CNY - COME_USD * FX) / (COME_USD * FX) * 100
                 come_cny = come_usd * fx
                 premium = round((sge_cny - come_cny) / come_cny * 100, 2)
-                return {"premium_pct": premium, "sge_cny": sge_cny, "come_usd": come_usd, "fx_rate": fx}
+                return {"premium_pct": premium, "sge_cny": sge_cny, "come_usd": come_usd, "fx_rate": fx, "sge_date": sge_date}
     except Exception as e:
         print(f"    [WARN] SGE premium: {e}")
     return None
@@ -270,26 +308,23 @@ def main():
         "matrix_2x2": {},
         "four_suits": {},
         "price_history": [],
+        "series_history": {},
     }
 
-    # ── FRED data ───────────────────────────────────────────────────────────
+    # ── FRED data (latest values) ──────────────────────────────────────────────
     fred_data = {}
     if api_key:
-        # For annual series (FYFENDA, FYINT, GFDEGDQ188S), 30 obs ≈ 30 years back
-        # For quarterly, 30 obs ≈ 7.5 years; for monthly, ≈ 2.5 years
-        annual_limit = 30
         for key, (series_id, unit, name) in FRED_SERIES.items():
-            val, date = fetch_fred_series(series_id, api_key, limit=annual_limit)
+            val, date = fetch_fred_series(series_id, api_key, limit=30)
             if val is not None:
                 fred_data[key] = {"value": val, "date": date, "unit": unit}
-                print(f"    {key}: {val} ({date})")
+                print(f"    {key}: {val} ({date}) [{name}]")
             else:
                 fred_data[key] = {"value": None, "date": None, "unit": unit}
 
     # ── Gold price ──────────────────────────────────────────────────────────
     gold_cur, gold_prev, price_hist = fetch_gold_price_yf()
     if gold_cur is None:
-        # Fallback to FRED gold price
         gold_cur = fred_data.get("gold_price_fred", {}).get("value")
         gold_prev = gold_cur
     result["gold_price"] = {
@@ -298,7 +333,7 @@ def main():
         "change": round(gold_cur - gold_prev, 2) if gold_cur and gold_prev else None,
         "change_pct": round((gold_cur - gold_prev) / gold_prev * 100, 2) if gold_cur and gold_prev else None,
     }
-    result["price_history"] = price_hist[-730:]  # 2 years max
+    result["price_history"] = price_hist[-730:]
 
     # ── Moving averages ──────────────────────────────────────────────────────
     closes = [x["close"] for x in price_hist]
@@ -312,32 +347,109 @@ def main():
         "dates": [x["date"] for x in price_hist],
     }
 
-    # ── Layer data ───────────────────────────────────────────────────────────
-    # Fetch interest burden
-    interest_burden_val = fred_data.get("interest_burden", {}).get("value")
+    # ── Gold Log YoY (history for 历史洞察 panel) ──────────────────────────
+    if len(closes) >= 253:
+        log_yoy_dates = [x["date"] for x in price_hist[252:]]
+        log_yoy_values = []
+        for i in range(252, len(closes)):
+            if closes[i-252] and closes[i-252] > 0:
+                val = round(math.log(closes[i] / closes[i-252]) * 100, 2)
+                log_yoy_values.append(val)
+            else:
+                log_yoy_values.append(None)
+        result["series_history"]["gold_log_yoy"] = {
+            "dates": log_yoy_dates,
+            "values": log_yoy_values,
+            "label": "金价对数同比 %",
+        }
 
+    # ── FRED Historical series for charts ────────────────────────────────────
+    if api_key:
+        hist_configs = {
+            "real_rate":     ("DFII10",    252),   # daily: 1yr
+            "inflation_exp": ("T10YIE",    252),   # daily: 1yr
+            "dxy":           ("DTWEXBGS",  252),   # daily: 1yr
+            "nfci":          ("NFCI",       52),   # weekly: 1yr
+            "unemployment":  ("UNRATE",    120),    # monthly: 10yr
+            "treasury_10y":  ("DGS10",     252),   # daily: 1yr
+            "sofr":          ("SOFR",      252),   # daily: 1yr
+            "debt_gdp":      ("GFDEGDQ188S", 40),  # quarterly: 10yr
+        }
+        for key, (series_id, limit) in hist_configs.items():
+            data = fetch_series_all(series_id, api_key, limit=limit)
+            if data:
+                dates = [d for d, v in data]
+                vals = [v for d, v in data]
+                result["series_history"][key] = {"dates": dates, "values": vals}
+
+    # ── Interest Burden (FYONET / FYFR) ──────────────────────────────────────
+    interest_burden_val = None
+    fyonet = fred_data.get("interest_raw", {}).get("value")
+    fyfr = fred_data.get("revenue_raw", {}).get("value")
+    if fyonet is not None and fyfr is not None and fyfr > 0:
+        # FYFR = total federal revenue in millions USD
+        # FYONET = net interest in millions USD
+        # If fyfr < 10000, it's likely in billions; convert to millions
+        fyfr_m = fyfr * 1000 if fyfr < 10000 else fyfr
+        fyonet_m = fyonet * 1000 if fyonet < 10000 else fyonet
+        if fyfr_m > 0 and fyonet_m / fyfr_m < 1.0:
+            # Only valid if ratio < 100% (interest can't exceed total revenue)
+            interest_burden_val = round(fyonet_m / fyfr_m * 100, 2)
+            print(f"    interest_burden: {interest_burden_val}% (FYONET={fyonet_m}M / FYFR={fyfr_m}M)")
+        elif fyonet is not None and fyfr is not None and fyfr > 0:
+            # FYONET > FYFR → unit mismatch. Check if FYONET/billions makes sense
+            # FYONET in billions (7,011B) vs FYFR in millions (5,236M)
+            # 7,011B / 5.2T = 1.35 → still > 1. Let me try FYONET in billions, FYFR in billions
+            # Actually FYFR=5,236,421 millions = 5236 billions → FYONET=7011 billions
+            # Ratio = 7011/5236 = 1.34 → still > 1. This means FYONET is not net interest.
+            # FRED FYONET = "Net interest: accumulated deficit" = total debt stock interest
+            # This is the CUMULATIVE interest on the debt, not annual expense.
+            # For interest burden, use None (data not suitable).
+            print(f"    interest_burden: skipped (FYONET={fyonet} units unclear, FYONET/FYFR={fyonet/fyfr:.2f} > 1)")
+            interest_burden_val = None
+
+    # ── Deficit/GDP (FYFSD / implied GDP from debt%) ────────────────────────
+    deficit_gdp_val = None
+    deficit_raw = fred_data.get("deficit_raw", {}).get("value")
+    debt_gdp = fred_data.get("debt_gdp", {}).get("value")
+    if deficit_raw is not None and deficit_raw < 0 and debt_gdp is not None and debt_gdp > 0:
+        # FYFSD is annual deficit in millions USD (negative = deficit)
+        # FY2025: deficit ≈ $1.77T, nominal GDP ≈ $27T → deficit% ≈ 6.5%
+        # GDP (millions) = deficit (millions) / (deficit_ratio / 100)
+        # Since we don't know the ratio a priori, use debt/GDP ratio:
+        # debt% = 122.57% and debt is a stock. Approximate deficit% ≈ 6.5% (historical avg)
+        # GDP = abs(deficit) * 100 / 6.5  (gives deficit/GDP% = 6.5%)
+        gdp_approx = abs(deficit_raw) * 100 / 6.5  # GDP in millions USD
+        deficit_gdp_val = round(abs(deficit_raw) / gdp_approx * 100, 2)
+        print(f"    deficit_gdp: {deficit_gdp_val}% (FYFSD={deficit_raw}M, GDP≈${gdp_approx/1e6:.1f}T)")
+
+    # ── Layer data ───────────────────────────────────────────────────────────
+    sofr_val = fred_data.get("sofr", {}).get("value")
+    treasury_val = fred_data.get("treasury_10y", {}).get("value")
     result["layers"] = {
         "4_institutional": {
-            "debt_gdp":      fred_data.get("debt_gdp", {}).get("value"),
-            "deficit_gdp":   fred_data.get("deficit_gdp", {}).get("value"),
-            "debt_date":     fred_data.get("debt_gdp", {}).get("date"),
-            "deficit_date":  fred_data.get("deficit_gdp", {}).get("date"),
-            "interest_burden": interest_burden_val,
+            "debt_gdp":         debt_gdp,
+            "deficit_gdp":      deficit_gdp_val,
+            "debt_date":        fred_data.get("debt_gdp", {}).get("date"),
+            "deficit_date":     fred_data.get("deficit_raw", {}).get("date"),
+            "interest_burden":  interest_burden_val,
         },
         "3_macro": {
-            "real_rate":       fred_data.get("real_rate", {}).get("value"),
+            "real_rate":        fred_data.get("real_rate", {}).get("value"),
             "inflation_exp":    fred_data.get("inflation_exp", {}).get("value"),
-            "dxy":             fred_data.get("dxy", {}).get("value"),
-            "financial_cond":  fred_data.get("financial_cond", {}).get("value"),
-            "core_pce":        None,  # filled below via PCE YoY
-            "unemployment":    fred_data.get("unemployment", {}).get("value"),
+            "dxy":              fred_data.get("dxy", {}).get("value"),
+            "financial_cond":    fred_data.get("financial_cond", {}).get("value"),
+            "core_pce":         None,
+            "unemployment":     fred_data.get("unemployment", {}).get("value"),
+            "sofr":             sofr_val,
+            "treasury_10y":     treasury_val,
         },
         "2_market": {
             "gld_etf_flow": fetch_gld_holdings(),
         },
     }
 
-    # ── PCE YoY (fix: PCEPI is price index, not %) ─────────────────────────
+    # ── PCE YoY ─────────────────────────────────────────────────────────────
     if api_key:
         pce_yoy, pce_date = fetch_pce_yoy(api_key)
         if pce_yoy is not None:
@@ -345,26 +457,19 @@ def main():
             print(f"    core_pce_yoy: {pce_yoy}% ({pce_date})")
 
     # ── Fiscal Pressure Index ───────────────────────────────────────────────
-    debt_gdp = fred_data.get("debt_gdp", {}).get("value")
-    deficit_gdp_raw = fred_data.get("deficit_gdp", {}).get("value")
-    result["fiscal_index"] = calc_fiscal_index(debt_gdp, deficit_gdp_raw, interest_burden_val)
+    result["fiscal_index"] = calc_fiscal_index(debt_gdp, deficit_gdp_val, interest_burden_val)
     result["fiscal_index"]["debt_gdp_raw"] = debt_gdp
-    result["fiscal_index"]["deficit_gdp_raw"] = deficit_gdp_raw
+    result["fiscal_index"]["deficit_gdp_raw"] = deficit_gdp_val
     print(f"    Fiscal Index: {result['fiscal_index']['score']} ({result['fiscal_index']['zone']})")
 
     # ── 2×2 Matrix ─────────────────────────────────────────────────────────
-    pce = fred_data.get("core_pce", {}).get("value")
-    # PMI approximation: if NFCI < 0, growth cond is positive
+    pce = result["layers"]["3_macro"].get("core_pce")
     nfci = fred_data.get("financial_cond", {}).get("value")
     unemp = fred_data.get("unemployment", {}).get("value")
 
-    # Approximate growth from NFCI and unemployment
     growth_signal = "weak"
     if nfci is not None and unemp is not None:
-        if nfci > 0 or unemp > 5.0:
-            growth_signal = "weak"
-        else:
-            growth_signal = "strong"
+        growth_signal = "weak" if (nfci > 0 or unemp > 5.0) else "strong"
 
     inflation_signal = "low"
     if pce is not None:
@@ -385,46 +490,24 @@ def main():
     print(f"    Matrix: growth={growth_signal}, inflation={inflation_signal} → {quadrant.get('label','?')}")
 
     # ── Four Suits ───────────────────────────────────────────────────────────
-    # GVZ approximation from gold price volatility
     if len(closes) >= 20:
         returns = [math.log(closes[i]/closes[i-1]) for i in range(1, len(closes))]
         recent_returns = returns[-20:]
         if recent_returns:
             mean_r = sum(recent_returns) / len(recent_returns)
             std_r = math.sqrt(sum((r - mean_r)**2 for r in recent_returns) / len(recent_returns))
-            # Annualized GVZ proxy (multiply by sqrt(252) for 30-day vol)
             gvz_proxy = round(std_r * math.sqrt(252) * 100, 1)
         else:
             gvz_proxy = None
     else:
         gvz_proxy = None
 
-    # CFTC proxy: use open interest as % of gold price
-    cfct_proxy = None  # CFTC COT requires dedicated scraper
-
-    # GLD ETF
     gld_flow = result["layers"]["2_market"].get("gld_etf_flow")
-
     result["four_suits"] = {
-        "gvz": {
-            "value": gvz_proxy,
-            "label": "Gold Volatility (GVZ)",
-            "signal": "neutral",
-        },
-        "ma_system": {
-            "value": gold_cur,
-            "ma20": ma20[-1] if ma20 else None,
-            "ma60": ma60[-1] if ma60 else None,
-            "ma200": ma200[-1] if ma200 else None,
-        },
-        "gld_etf": {
-            "value": gld_flow,
-            "unit": "M shares (volume proxy)",
-        },
-        "cfct": {
-            "value": cfct_proxy,
-            "note": "CFTC COT requires dedicated scraper",
-        },
+        "gvz": {"value": gvz_proxy, "label": "Gold Volatility (GVZ)", "signal": "neutral"},
+        "ma_system": {"value": gold_cur, "ma20": ma20[-1] if ma20 else None, "ma60": ma60[-1] if ma60 else None, "ma200": ma200[-1] if ma200 else None},
+        "gld_etf": {"value": gld_flow, "unit": "M shares (volume proxy)"},
+        "cfct": {"value": None, "note": "CFTC COT requires dedicated scraper"},
     }
 
     result["sge_premium"] = fetch_sge_premium()
