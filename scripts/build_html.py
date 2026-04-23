@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Build static HTML dashboard from indicators + commentary.
-Outputs to docs/index.html
+# Outputs to docs/implementation/index.html (NOT docs/index.html — that's the landing page)
 """
 import json
 import os
@@ -9,7 +9,7 @@ from datetime import datetime
 
 INDICATORS_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'indicators.json')
 COMMENTARY_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'commentary.json')
-OUTPUT_FILE = os.path.join(os.path.dirname(__file__), '..', 'docs', 'index.html')
+OUTPUT_FILE = os.path.join(os.path.dirname(__file__), '..', 'docs', 'implementation', 'index.html')
 
 def load_data():
     indicators = {}
