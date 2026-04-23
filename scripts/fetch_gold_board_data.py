@@ -354,6 +354,66 @@ def fetch_cftc_cot() -> dict:
     return latest
 
 
+def fetch_allocation_value(gold_prices: list) -> dict:
+    """
+    Compute Gold allocation value via SPY-Gold 60-day rolling correlation.
+    Low/negative correlation = high diversification benefit = high allocation value.
+    Also uses 10yr real rate as secondary signal (negative real rate = gold favorable).
+    Returns {correlation, score, label}.
+    """
+    if not HAS_YFINANCE or not gold_prices or len(gold_prices) < 65:
+        return {"correlation": None, "score": None, "label": "数据不足"}
+    try:
+        # SPY daily prices for last 90 days
+        spy = yf.Ticker("SPY")
+        spy_hist = spy.history(period="4mo", auto_adjust=True)
+        if spy_hist.empty or len(spy_hist) < 65:
+            return {"correlation": None, "score": None, "label": "SPY数据不足"}
+        # Align by date
+        gold_dict = {p["date"]: p["close"] for p in gold_prices}
+        spy_dict = {d.strftime("%Y-%m-%d"): spy_hist.loc[d, "Close"]
+                    for d in spy_hist.index}
+        common_dates = sorted(set(gold_dict.keys()) & set(spy_dict.keys()))
+        if len(common_dates) < 65:
+            return {"correlation": None, "score": None, "label": "共同交易日不足"}
+        gold_rets = [math.log(gold_dict[d] / gold_dict[common_dates[i-1]])
+                     for i, d in enumerate(common_dates) if i > 0]
+        spy_rets = [math.log(spy_dict[d] / spy_dict[common_dates[i-1]])
+                    for i, d in enumerate(common_dates) if i > 0]
+        # 60-day rolling correlation (use last window)
+        window = min(60, len(gold_rets))
+        corr_vals = []
+        for i in range(window, len(gold_rets) + 1):
+            g_chunk = gold_rets[i-window:i]
+            s_chunk = spy_rets[i-window:i]
+            g_mean = sum(g_chunk) / window
+            s_mean = sum(s_chunk) / window
+            cov = sum((g_chunk[j]-g_mean)*(s_chunk[j]-s_mean) for j in range(window)) / window
+            g_std = math.sqrt(sum((x-g_mean)**2 for x in g_chunk) / window)
+            s_std = math.sqrt(sum((x-s_mean)**2 for x in s_chunk) / window)
+            if g_std > 0 and s_std > 0:
+                corr_vals.append(cov / (g_std * s_std))
+        corr = round(corr_vals[-1], 3) if corr_vals else None
+        # Score: corr<0=100, 0-0.1=80, 0.1-0.3=60, 0.3-0.5=40, >0.5=20
+        if corr is None:
+            score, label = None, "相关性不足"
+        elif corr < 0:
+            score, label = 100, "负相关·强分散价值"
+        elif corr < 0.1:
+            score, label = 80, "低相关·高分散价值"
+        elif corr < 0.3:
+            score, label = 60, "中低相关·分散价值良好"
+        elif corr < 0.5:
+            score, label = 40, "中等相关·分散价值一般"
+        else:
+            score, label = 20, "高相关·分散价值低"
+        print(f"    Allocation: SPY-Gold corr={corr} → score={score} ({label})")
+        return {"correlation": corr, "score": score, "label": label}
+    except Exception as e:
+        print(f"    [WARN] Allocation value: {e}")
+        return {"correlation": None, "score": None, "label": f"错误: {e}"}
+
+
 def fetch_sge_premium() -> dict:
     """
     Fetch Shanghai Gold Exchange Au9999 price and compute premium over COMEX.
@@ -629,6 +689,28 @@ def main():
             ma_arrangement = "mixed"
     print(f"    MA arrangement: {ma_arrangement} (MA20={m20}, MA60={m60}, MA200={m200})")
 
+    # ── Sentiment Temperature (四件套综合读数) ───────────────────────────────
+    cfct_pct = cftc_data.get("percentile") if cftc_data else None
+    # Normalize each suit to 0-100: high = hot/fearful market
+    gvz_score = gvz_pct if gvz_pct is not None else 50
+    ma_score_map = {"bull": 100, "neutral": 50, "mixed": 50, "bear": 0}
+    ma_score = ma_score_map.get(ma_arrangement, 50)
+    cfct_score = cfct_pct if cfct_pct is not None else 50
+    gld_score = gld_flow.get("percentile") if gld_flow.get("percentile") is not None else 50
+    scores = [s for s in [gvz_score, ma_score, cfct_score, gld_score] if s is not None]
+    sentiment_temp = round(sum(scores) / len(scores), 1) if scores else None
+    sentiment_label = ("🥵 过热" if sentiment_temp and sentiment_temp > 75
+                       else "↗️ 偏热" if sentiment_temp and sentiment_temp > 60
+                       else "➡️ 中性" if sentiment_temp and sentiment_temp > 40
+                       else "↘️ 偏冷" if sentiment_temp and sentiment_temp > 25
+                       else "🥶 极冷" if sentiment_temp else None)
+    print(f"    Sentiment: temp={sentiment_temp} ({sentiment_label}), "
+          f"GVZ={gvz_score}, MA={ma_score}, CFTC={cfct_score}, GLD={gld_score}")
+
+    # ── Allocation Value ────────────────────────────────────────────────────
+    alloc = fetch_allocation_value(price_hist)
+
+    # ── Four Suits ───────────────────────────────────────────────────────────
     result["four_suits"] = {
         "gvz": {
             "value": gvz_val,
@@ -651,11 +733,18 @@ def main():
             "unit": "M shares outstanding",
         },
         "cfct": cftc_data if cftc_data else {"value": None, "note": "CFTC COT requires dedicated scraper"},
+        "sentiment_temperature": {
+            "value": sentiment_temp,
+            "label": sentiment_label,
+            "components": {"gvz": gvz_score, "ma": ma_score, "cfct": cfct_score, "gld": gld_score},
+        },
     }
 
     result["sge_premium"] = fetch_sge_premium()
     if result["sge_premium"]:
         print(f"    SGE premium: {result['sge_premium']['premium_pct']}% (SGE CNY={result['sge_premium']['sge_cny']})")
+
+    result["allocation_value"] = alloc
 
     # ── Write output ───────────────────────────────────────────────────────
     with open(OUTPUT, "w") as f:

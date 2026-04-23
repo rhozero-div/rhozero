@@ -138,6 +138,31 @@ def build_html(data: dict) -> str:
         cfct_signal = "—"
         cfct_color = MA_COLOR["neutral"]
 
+    # Sentiment temperature (from four_suits JSON)
+    st = fs.get("sentiment_temperature", {})
+    sentiment_val = st.get("value")
+    sentiment_label_str = st.get("label") or ""
+    # Color: hot=red, warm=orange, neutral=yellow, cool=green, cold=blue
+    if sentiment_val is not None:
+        if sentiment_val > 75:
+            sentiment_color = "#e74c3c"
+            sentiment_fill_color = "linear-gradient(90deg, #f39c12, #e74c3c)"
+        elif sentiment_val > 60:
+            sentiment_color = "#d68910"
+            sentiment_fill_color = "linear-gradient(90deg, #f1c40f, #d68910)"
+        elif sentiment_val > 40:
+            sentiment_color = "#27ae60"
+            sentiment_fill_color = "#27ae60"
+        elif sentiment_val > 25:
+            sentiment_color = "#2980b9"
+            sentiment_fill_color = "#2980b9"
+        else:
+            sentiment_color = "#8e44ad"
+            sentiment_fill_color = "#8e44ad"
+    else:
+        sentiment_color = "var(--muted)"
+        sentiment_fill_color = "var(--border)"
+
     # GVZ signal
     if gvz:
         if gvz > 25:
@@ -378,6 +403,16 @@ def build_html(data: dict) -> str:
     .suit-value {{ font-size: 1.4rem; font-weight: 700; }}
     .suit-sub {{ font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }}
     .suit-signal {{ font-size: 0.8rem; font-weight: 600; margin-top: 0.5rem; }}
+    .sentiment-bar-wrap {{
+      background: var(--card); padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 1rem;
+    }}
+    .sentiment-label {{ font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; min-width: 80px; }}
+    .sentiment-track {{ flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }}
+    .sentiment-fill {{ height: 100%; border-radius: 4px; transition: width 0.5s ease; }}
+    .sentiment-value {{ font-size: 1.1rem; font-weight: 700; min-width: 50px; text-align: right; }}
+    .sentiment-tag {{ font-size: 0.8rem; font-weight: 600; min-width: 70px; }}
 
     /* ── Chart ── */
     .chart-wrap {{
@@ -601,6 +636,16 @@ def build_html(data: dict) -> str:
     <div class="suit-sub" style="color:#888">{cfct_pct is not None and '历史分位: ' + str(cfct_pct) + '%' or ''}</div>
     <div class="suit-signal" style="color:{cfct_color}">{cfct_signal}</div>
   </div>
+</div>
+
+<!-- ── 情绪温度计 ── -->
+<div class="sentiment-bar-wrap">
+  <div class="sentiment-label">情绪温度</div>
+  <div class="sentiment-track">
+    <div class="sentiment-fill" style="width:{str(sentiment_val) + '%' if sentiment_val is not None else '50%'}; background:{sentiment_fill_color}"></div>
+  </div>
+  <div class="sentiment-value" style="color:{sentiment_color}">{str(sentiment_val) if sentiment_val is not None else '—'}</div>
+  <div class="sentiment-tag" style="color:{sentiment_color}">{sentiment_label_str}</div>
 </div>
 
 <!-- ── Section: 金价走势图 ── -->
@@ -1391,7 +1436,7 @@ def build_html(data: dict) -> str:
       'price':       {{ val: v1.gold_price && v1.gold_price.current, fmt: v => v != null ? '$' + v.toFixed(2) : '—', date: null }},
       'trend':       {{ val: v2.ma_system && v2.ma_system.value, fmt: v => v != null ? '$' + v.toFixed(0) : '—', date: null }},
       'vol':         {{ val: null,                        fmt: () => '—',                                  date: null }},
-      'alloc':       {{ val: null,                        fmt: () => '框架评估',                           date: null }},
+      'alloc':       {{ val: rawData.allocation_value && rawData.allocation_value.score, fmt: v => rawData.allocation_value ? (rawData.allocation_value.score != null ? rawData.allocation_value.score + '/100 · ' + rawData.allocation_value.label : '数据不足') : '—', date: null }},
       'insurance':   {{ val: null,                        fmt: () => '定性指标',                            date: null }},
     }};
 

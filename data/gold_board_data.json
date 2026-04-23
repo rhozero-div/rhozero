@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-04-23T13:04:23.888613+08:00",
+  "updated_at": "2026-04-23T13:10:12.531930+08:00",
   "layers": {
     "4_institutional": {
       "debt_gdp": 122.56815,
@@ -1536,10 +1536,10 @@
       ]
     },
     "ma_system": {
-      "value": 4719.2998046875,
-      "ma20": 4703.02,
-      "ma60": 4890.06,
-      "ma200": 4215.7,
+      "value": 4720.39990234375,
+      "ma20": 4703.08,
+      "ma60": 4890.08,
+      "ma200": 4215.71,
       "arrangement": "mixed"
     },
     "gld_etf": {
@@ -1548,11 +1548,21 @@
       "unit": "M shares outstanding"
     },
     "cfct": {
-      "net_long": 126040,
-      "week": "2025-12-30",
-      "mm_long": 148642,
-      "mm_short": 22602,
-      "percentile": 61.4
+      "net_long": 95141,
+      "week": "2026-04-14",
+      "mm_long": 125422,
+      "mm_short": 30281,
+      "percentile": 53.3
+    },
+    "sentiment_temperature": {
+      "value": 73.8,
+      "label": "\u2197\ufe0f \u504f\u70ed",
+      "components": {
+        "gvz": 91.7,
+        "ma": 50,
+        "cfct": 53.3,
+        "gld": 100.0
+      }
     }
   },
   "price_history": [
@@ -3570,7 +3580,7 @@
     },
     {
       "date": "2026-04-23",
-      "close": 4719.3
+      "close": 4720.4
     }
   ],
   "series_history": {
@@ -4081,7 +4091,7 @@
         37.34,
         32.16,
         33.04,
-        36.49
+        36.52
       ],
       "label": "\u91d1\u4ef7\u5bf9\u6570\u540c\u6bd4 %"
     },
@@ -8501,10 +8511,10 @@
     }
   },
   "gold_price": {
-    "current": 4719.2998046875,
+    "current": 4720.39990234375,
     "prev": 4732.5,
-    "change": -13.2,
-    "change_pct": -0.28
+    "change": -12.1,
+    "change_pct": -0.26
   },
   "moving_averages": {
     "ma20": [
@@ -9011,7 +9021,7 @@
       4663.18,
       4677.89,
       4694.55,
-      4703.02
+      4703.08
     ],
     "ma60": [
       null,
@@ -9517,7 +9527,7 @@
       4906.49,
       4901.86,
       4896.07,
-      4890.06
+      4890.08
     ],
     "ma200": [
       null,
@@ -10023,7 +10033,7 @@
       4194.81,
       4201.64,
       4208.64,
-      4215.7
+      4215.71
     ],
     "dates": [
       "2024-04-23",
@@ -10533,10 +10543,15 @@
     ]
   },
   "sge_premium": {
-    "premium_pct": 1.22,
+    "premium_pct": 1.16,
     "sge_cny": 32625.39,
-    "come_usd": 4718.2,
+    "come_usd": 4720.8,
     "fx_rate": 6.8316,
     "sge_date": "2026-04-21"
+  },
+  "allocation_value": {
+    "correlation": 0.238,
+    "score": 60,
+    "label": "\u4e2d\u4f4e\u76f8\u5173\u00b7\u5206\u6563\u4ef7\u503c\u826f\u597d"
   }
 }
