@@ -3,100 +3,216 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Investment Indicators Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Dollar Liquidity Theory · RhoZero Implementation</title>
   <style>
     :root {
-      --bg: #f5f0e8;
-      --card: #faf7f2;
-      --border: #e0d8cc;
-      --text: #2a2520;
-      --text-muted: #8a7d72;
-      --accent: #8B5A2B;
+      --bg: #f5f0e8; --card: #faf7f2; --border: #e0d8cc;
+      --text: #2a2520; --text-muted: #8a7d72; --accent: #8B5A2B;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-    header { margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
-    h1 { color: var(--accent); }
-    .back-link { font-size: 0.875rem; color: var(--text-muted); text-decoration: none; }
-    .back-link:hover { color: var(--accent); }
-    .updated { color: var(--text-muted); font-size: 0.875rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
-    h2 { font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
-    th { color: var(--text-muted); font-weight: 500; }
-    .commentary { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
-    .commentary p { font-size: 1.1rem; }
-    .chart-container { height: 300px; }
-    footer { margin-top: 2rem; text-align: center; color: var(--text-muted); font-size: 0.75rem; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
+    }
+
+    /* Nav */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2rem; border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+    .nav-brand { font-size: 0.9rem; font-weight: 700; color: var(--accent); }
+    .nav-back { font-size: 0.8rem; color: var(--text-muted); text-decoration: none; }
+    .nav-back:hover { color: var(--accent); }
+
+    .container { max-width: 860px; margin: 0 auto; padding: 3rem 2rem; }
+
+    h1 { font-size: 1.6rem; color: var(--text); margin-bottom: 0.5rem; }
+    h2 { font-size: 1.1rem; color: var(--text); margin-top: 2.5rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+    h3 { font-size: 0.95rem; color: var(--accent); margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    p { margin-bottom: 1rem; font-size: 0.95rem; }
+    ul { margin: 0.75rem 0 1rem 1.5rem; font-size: 0.95rem; }
+    li { margin-bottom: 0.4rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    code {
+      background: var(--border); padding: 0.15rem 0.4rem;
+      border-radius: 4px; font-size: 0.85rem; font-family: 'SF Mono', Consolas, monospace;
+    }
+
+    .level-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+    .level-table th, .level-table td { padding: 0.6rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+    .level-table th { background: var(--card); color: var(--text-muted); font-weight: 500; }
+    .level-table tr:nth-child(even) { background: rgba(250,247,242,0.5); }
+    .l1 { color: #2d8a4e; font-weight: 600; }
+    .l2 { color: #d29922; font-weight: 600; }
+    .l3 { color: #f0883e; font-weight: 600; }
+    .l4 { color: #c0392b; font-weight: 600; }
+    .l5 { color: #a02020; font-weight: 600; }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1.25rem 1.5rem; margin: 1.5rem 0;
+    }
+    .card h3 { margin-top: 0; }
+
+    footer {
+      margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--border);
+      text-align: center; color: var(--text-muted); font-size: 0.8rem;
+    }
   </style>
 </head>
 <body>
+
+  <nav>
+    <span class="nav-brand">RhoZero</span>
+    <a href="../" class="nav-back">← Home</a>
+  </nav>
+
   <div class="container">
-    <header>
-      <div>
-        <h1>Investment Indicators</h1>
-        <p class="updated">Last updated: 2026-04-21T22:33:37.578931</p>
-      </div>
-      <a href="../" class="back-link">← Home</a>
-    </header>
-    
-    <div class="grid">
-      <div class="card">
-        <h2>Current Values</h2>
-        <table>
-          <thead><tr><th>Indicator</th><th>Value</th><th>Date</th></tr></thead>
-          <tbody><tr><td>SOFR</td><td>3.63% (363bp)</td><td>2026-04-20</td></tr>
-<tr><td>TED</td><td>0.09% (9bp)</td><td>2022-01-21</td></tr>
-<tr><td>DXY</td><td>118.08</td><td>2026-04-17</td></tr>
-<tr><td>T10Y2Y</td><td>0.54% (54bp)</td><td>2026-04-20</td></tr>
-<tr><td>WALCL</td><td>$6705.7B</td><td>2026-04-15</td></tr>
-<tr><td>RRP</td><td>$0.5B</td><td>2026-04-20</td></tr>
-<tr><td>TGA</td><td>$751.4B</td><td>2026-04-15</td></tr>
-<tr><td>M2</td><td>$22.7T</td><td>2026-02-01</td></tr>
-<tr><td>NetLiquidity</td><td>$5954.3B</td><td>2026-04-15</td></tr></tbody>
-        </table>
-      </div>
-      
-      <div class="card">
-        <h2>Charts</h2>
-        <div class="chart-container">
-          <canvas id="mainChart"></canvas>
-        </div>
-      </div>
+
+    <h1>Dollar Liquidity Theory</h1>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">Framework Implementation · v3.1</p>
+
+    <h2>Overview</h2>
+    <p>
+      The Dollar Liquidity Theory is a macro-financial framework for assessing US dollar liquidity conditions across five levels — from abundant宽松 to crisis危机. It synthesizes Federal Reserve balance sheet data, money market spreads, and foreign exchange dynamics into a composite rating system used for weekly reporting and portfolio risk management.
+    </p>
+
+    <h2>Level Rating System</h2>
+    <table class="level-table">
+      <thead>
+        <tr>
+          <th>Level</th>
+          <th>Signal</th>
+          <th>T10Y2Y Threshold</th>
+          <th>DXY Threshold</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="l1">L1</td>
+          <td>宽松 Abundant</td>
+          <td>&lt; −50bp</td>
+          <td>—</td>
+          <td>Very loose financial conditions</td>
+        </tr>
+        <tr>
+          <td class="l2">L2</td>
+          <td>正常偏松 Normal-Easy</td>
+          <td>−50bp to 0bp</td>
+          <td>—</td>
+          <td>Loose conditions</td>
+        </tr>
+        <tr>
+          <td class="l3">L3</td>
+          <td>正常偏紧 Normal-Tight</td>
+          <td>0bp to +50bp</td>
+          <td>—</td>
+          <td>Tightening, watch for transitions</td>
+        </tr>
+        <tr>
+          <td class="l4">L4</td>
+          <td>紧张 Stressed</td>
+          <td>+50bp to +150bp</td>
+          <td>&gt; P75</td>
+          <td>Elevated stress, risk-off environment</td>
+        </tr>
+        <tr>
+          <td class="l5">L5</td>
+          <td>危机 Crisis</td>
+          <td>&gt; +150bp</td>
+          <td>&gt; P75</td>
+          <td>Severe dollar funding crisis</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Primary Indicators</h2>
+
+    <div class="card">
+      <h3>SOFR − DFF Spread</h3>
+      <p>Federal Reserve repo rate vs. federal funds rate spread. Captures short-term bank funding stress. <strong>Rule:</strong> Level determined by spread magnitude.</p>
     </div>
-    
-    <div class="commentary">
-      <h2>AI Commentary</h2>
-      <p>The firm SOFR at 3.63 % and a strong DXY (≈118) point to a risk‑off tone, as tighter monetary policy and a stronger dollar temper risk appetite even though the low TED spread and a positive T10Y2Y indicate limited credit stress. At the same time, the Fed’s balance sheet near $6.7 trillion, a net liquidity figure around $5.9 trillion, and an elevated M2 keep liquidity abundant, though the Treasury’s large cash balance could become a future drain if it is drawn down for spending.</p>
+
+    <div class="card">
+      <h3>TED Spread</h3>
+      <p>3M Eurodollar rate minus 3M Treasury bill rate. Classic interbank stress indicator. <strong>Rule:</strong> &lt; 30bp = L1, 30–80bp = L2/L3, 80–150bp = L4, &gt; 150bp = L5.</p>
     </div>
-    
-    <div style="margin-top:2rem;padding:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:8px">
-      <h2 style="font-size:1rem;color:var(--text-muted);margin-bottom:0.75rem">Weekly Report</h2>
-      <p style="font-size:0.9rem"><a href="dollar-liquidity-weekly-report/" style="color:var(--accent)">美元流动性周度分析 →</a></p>
+
+    <div class="card">
+      <h3>Net Liquidity</h3>
+      <p><code>WALCL − RRP − TGA</code> — Fed balance sheet minus overnight reverse repos minus Treasury General Account. The core dollar availability measure.</p>
+      <p style="margin-bottom:0"><strong>L1:</strong> &gt; $5.8T &nbsp;|&nbsp; <strong>L2:</strong> $5.2–5.8T &nbsp;|&nbsp; <strong>L3:</strong> $4.5–5.2T &nbsp;|&nbsp; <strong>L4:</strong> $3.8–4.5T &nbsp;|&nbsp; <strong>L5:</strong> &lt; $3.8T</p>
     </div>
-    
+
+    <div class="card">
+      <h3>DXY (Dollar Index)</h3>
+      <p>Federal Reserve trade-weighted USD broad index. <strong>Rule:</strong> &gt; P75 (116.6) adds +1 level of stress. Elevated DXY amplifies global dollar scarcity.</p>
+    </div>
+
+    <div class="card">
+      <h3>Yield Curve Slope (T10Y2Y)</h3>
+      <p>10-Year minus 2-Year Treasury yield spread. Inverted curve often precedes/reinforces liquidity stress.</p>
+    </div>
+
+    <div class="card">
+      <h3>RRP (Overnight Reverse Repurchase)</h3>
+      <p>Supplementary indicator only. RRP = $0B is a wash — does not contribute to Net Liquidity or composite rating. Monitor for directional changes, not absolute zero.</p>
+    </div>
+
+    <h2>Composite Rating Logic</h2>
+    <p>The final rating is the <strong>worst level</strong> among all primary indicators:</p>
+    <ul>
+      <li>SOFR-DFF and Net Liquidity are co-primary (equal weight)</li>
+      <li>DXY &gt; P75 adds a "plus" modifier (+0.5 level) when评级 is L3–L4</li>
+      <li>RRP is <strong>excluded</strong> from composite — it's a supplementary signal only</li>
+    </ul>
+
+    <h2>Framework Versions</h2>
+    <table class="level-table">
+      <thead>
+        <tr><th>Version</th><th>Date</th><th>Key Change</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>v3.1</td><td>2026-04-21</td><td>Refined composite rules, DXY P75 threshold</td></tr>
+        <tr><td>v3.0</td><td>2026-04-15</td><td>Initial production version</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Automated Dashboard</h2>
+    <p>
+      The <a href="../dashboard/">Investment Indicators Dashboard</a> is updated daily via GitHub Actions.
+      It fetches live FRED data, generates AI commentary, and renders the latest readings for all primary indicators.
+    </p>
+
+    <h2>Data Sources</h2>
+    <ul>
+      <li><strong>FRED (Federal Reserve Economic Data)</strong> — WALCL, RRP, TGA, M2, DXY, SOFR, DFF, Treasury yields</li>
+      <li><strong>M2同比</strong> — calculated as month-over-month change from M2SL</li>
+      <li><strong>AI Commentary</strong> — generated via MiniMax M2.7 API</li>
+    </ul>
+
+    <h2>File Structure</h2>
+    <pre style="background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; font-size: 0.85rem; overflow-x: auto; margin: 1rem 0;">
+docs/
+├── index.html                        # Landing page
+├── dashboard/                        # Investment Indicators (automated)
+│   └── index.html
+├── implementation/                   # This page — framework docs
+│   └── index.html
+├── dollar-liquidity-weekly-report/  # Weekly reports
+│   ├── index.html
+│   └── YYYYMMDD.html
+└── gold-board/                      # Gold macro panel
+    └── index.html</pre>
+
     <footer>
-      <p>Data sourced from FRED | Weekly report: <a href="dollar-liquidity-weekly-report/" style="color:var(--accent)">美元流动性周度分析</a></p>
+      Dollar Liquidity Theory · RhoZero · Data by FRED · Updated via GitHub Actions
     </footer>
+
   </div>
-  
-  <script>
-    // Placeholder chart - expand with historical data
-    const ctx = document.getElementById('mainChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: { labels: [], datasets: [] },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: 'top' } },
-        scales: { y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }, x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } } }
-      }
-    });
-  </script>
 </body>
 </html>
