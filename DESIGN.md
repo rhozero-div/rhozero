@@ -80,21 +80,15 @@ Copy the `:root` block into your `<style>` tag and use CSS variables throughout.
 
 ```
 docs/
-├── index.html                        # Homepage (beige theme — NOT auto-generated)
-├── dashboard/                        # Investment Indicators (automated daily)
-│   └── index.html                   # build_html.py outputs here
-├── implementation/                   # Dollar Liquidity Theory framework docs
-│   └── index.html                   # Manual — do NOT overwrite
+├── index.html                     # Homepage —米色系，手动维护
 ├── gold-board/
-│   └── index.html                   # Gold Board — topology + fiscal index + matrix
+│   └── index.html                 # Gold Board (auto-updated)
 ├── demo/
-│   └── gold.html                    # Gold price demo (Chart.js + news)
+│   └── gold.html                  # Gold Demo (auto-updated)
 └── dollar-liquidity-weekly-report/
-    ├── index.html                   # Report archive listing
-    └── YYYYMMDD.html               # Individual weekly reports
+    ├── index.html                 # 周报存档列表
+    └── YYYYMMDD.html            # 每周报告
 ```
-
-**Important**: `build_html.py` outputs to `docs/dashboard/index.html`. Never change this to overwrite `docs/index.html` (homepage) or `docs/implementation/index.html` (docs page).
 
 ## Deployment
 
