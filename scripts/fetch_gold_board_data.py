@@ -184,25 +184,29 @@ def fetch_fred_series_history(series_id: str, api_key: str, limit: int = 24) -> 
 def fetch_series_all(series_id: str, api_key: str, limit: int = 252) -> list:
     """Fetch most recent N observations sorted ascending by date (for chart display)."""
     url = "https://api.stlouisfed.org/fred/series/observations"
-    params = {
+    params_base = {
         "series_id": series_id,
         "api_key": api_key,
         "file_type": "json",
         "limit": limit,
         "sort_order": "desc",
     }
-    try:
-        req = urllib.request.Request(f"{url}?{urllib.parse.urlencode(params)}", headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=30) as r:
-            data = json.loads(r.read())
-            obs = data.get("observations", [])
-            result = []
-            for o in reversed(obs):
-                if o["value"] not in ("", ".", None):
-                    result.append((o["date"], float(o["value"])))
-            return result
-    except Exception as e:
-        print(f"    [WARN] FRED all {series_id}: {e}")
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(f"{url}?{urllib.parse.urlencode(params_base)}",
+                                         headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=45) as r:
+                data = json.loads(r.read())
+                obs = data.get("observations", [])
+                result = []
+                for o in reversed(obs):
+                    if o["value"] not in ("", ".", None):
+                        result.append((o["date"], float(o["value"])))
+                return result
+        except Exception as e:
+            if attempt < 2:
+                continue  # retry
+            print(f"    [WARN] FRED all {series_id}: {e}")
     return []
 
 
@@ -460,6 +464,7 @@ def main():
             "sofr":          ("SOFR",      252),   # daily: 1yr
             "debt_gdp":      ("GFDEGDQ188S", 40),  # quarterly: 10yr
             "pcepi":         ("PCEPI",     36),    # monthly: 3yr (for JS YoY compute)
+            "gvz":           ("GVZCLS",    756),   # daily: ~3yr (CBOE Gold Volatility Index)
         }
         for key, (series_id, limit) in hist_configs.items():
             data = fetch_series_all(series_id, api_key, limit=limit)
@@ -571,17 +576,30 @@ def main():
     print(f"    Matrix: growth={growth_signal}, inflation={inflation_signal} → {quadrant.get('label','?')}")
 
     # ── Four Suits ───────────────────────────────────────────────────────────
-    if len(closes) >= 20:
-        returns = [math.log(closes[i]/closes[i-1]) for i in range(1, len(closes))]
-        recent_returns = returns[-20:]
-        if recent_returns:
-            mean_r = sum(recent_returns) / len(recent_returns)
-            std_r = math.sqrt(sum((r - mean_r)**2 for r in recent_returns) / len(recent_returns))
-            gvz_proxy = round(std_r * math.sqrt(252) * 100, 1)
+    # GVZ: Real CBOE Gold Volatility Index (implied vol from gold options)
+    gvz_val = None
+    gvz_date = None
+    gvz_hist = []
+    gvz_pct = None
+    if api_key:
+        gvz_data = fetch_series_all("GVZCLS", api_key, limit=756)  # ~3yr daily
+        if gvz_data:
+            gvz_dates = [d for d, v in gvz_data]
+            gvz_vals = [v for d, v in gvz_data]
+            gvz_val = gvz_vals[-1] if gvz_vals else None
+            gvz_date = gvz_dates[-1] if gvz_dates else None
+            gvz_hist = gvz_vals  # full history for percentile calc
+            # Percentile: what % of daily values are below current
+            if gvz_val and len(gvz_vals) > 30:
+                below = sum(1 for v in gvz_vals if v < gvz_val)
+                gvz_pct = round(below / len(gvz_vals) * 100, 1)
+            else:
+                gvz_pct = None
+            print(f"    GVZ: {gvz_val} (date={gvz_date}, percentile={gvz_pct}%, n={len(gvz_vals)})")
         else:
-            gvz_proxy = None
+            gvz_pct = None
     else:
-        gvz_proxy = None
+        gvz_pct = None
 
     gld_flow = result["layers"]["2_market"].get("gld_etf_flow", {})
 
@@ -591,7 +609,14 @@ def main():
         print(f"    CFTC net long: {cftc_data.get('net_long')} ({cftc_data.get('week')})")
 
     result["four_suits"] = {
-        "gvz": {"value": gvz_proxy, "label": "Gold Volatility (GVZ)", "signal": "neutral"},
+        "gvz": {
+            "value": gvz_val,
+            "date": gvz_date,
+            "percentile": gvz_pct,
+            "label": "Gold Volatility (GVZ)",
+            "signal": "neutral",
+            "history": gvz_hist,
+        },
         "ma_system": {"value": gold_cur, "ma20": ma20[-1] if ma20 else None, "ma60": ma60[-1] if ma60 else None, "ma200": ma200[-1] if ma200 else None},
         "gld_etf": {
             "shares": gld_flow.get("shares"),

@@ -79,7 +79,10 @@ def build_html(data: dict) -> str:
     fi_gauge_pct = min(100, max(0, fi_score))
 
     # ── Four suits signals ──────────────────────────────────────────────────
-    gvz = fs.get("gvz", {}).get("value")
+    gvz_obj = fs.get("gvz", {})
+    gvz = gvz_obj.get("value")
+    gvz_date = gvz_obj.get("date")
+    gvz_pct = gvz_obj.get("percentile")
     ma_sys = fs.get("ma_system", {})
     ma20 = ma_sys.get("ma20")
     ma60 = ma_sys.get("ma60")
@@ -543,7 +546,8 @@ def build_html(data: dict) -> str:
   <div class="suit-card">
     <div class="suit-name">① GVZ 波动率指数</div>
     <div class="suit-value">{fmt(gvz, '', 1) if gvz else '—'}</div>
-    <div class="suit-sub">期权市场 30天隐含波动率</div>
+    <div class="suit-sub">CBOE黄金期权隐含波动率{gvz_date and ' · ' + gvz_date or ''}</div>
+    <div class="suit-sub" style="color:#888">{gvz_pct and '历史分位: ' + str(gvz_pct) + '%' or '历史分位: 计算中...'}</div>
     <div class="suit-signal" style="color:{gvz_color}">{gvz_signal}</div>
   </div>
   <div class="suit-card">
@@ -1349,7 +1353,7 @@ def build_html(data: dict) -> str:
       'unemp':       {{ val: v3.unemployment,             fmt: v => v != null ? v.toFixed(1) + '%' : '—', date: v3.unemployment_date }},
       'gld_etf':     {{ val: v2.gld_etf && v2.gld_etf.shares, fmt: v => v != null ? v.toFixed(1) + 'M' : '—', date: null }},
       'cfct':        {{ val: v2.cfct && v2.cfct.net_long, fmt: v => v != null ? v.toLocaleString() : '—', date: v2.cfct && v2.cfct.week }},
-      'gvz':         {{ val: v2.gvz && v2.gvz.value,     fmt: v => v != null ? v.toFixed(1) : '—',       date: null }},
+      'gvz':         {{ val: v2.gvz && v2.gvz.value, fmt: v => v != null ? v.toFixed(1) : '—', date: v2.gvz && v2.gvz.date }},
       'momentum':    {{ val: v2.ma_system && v2.ma_system.value, fmt: v => v != null ? '$' + v.toFixed(0) : '—', date: null }},
       'price':       {{ val: v1.gold_price && v1.gold_price.current, fmt: v => v != null ? '$' + v.toFixed(2) : '—', date: null }},
       'trend':       {{ val: v2.ma_system && v2.ma_system.value, fmt: v => v != null ? '$' + v.toFixed(0) : '—', date: null }},
