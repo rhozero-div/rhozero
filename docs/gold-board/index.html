@@ -380,6 +380,24 @@
   <div class="section-title">黄金定价拓扑网 · 4层 × 21节点</div>
   <div class="section-badge">系统全景</div>
 </div>
+
+<!-- 叙事横幅 + 层标签 + 传导说明 -->
+<div style="background:#fffdf7;border:1px solid #e8e0d0;border-radius:8px;padding:0.75rem 1.25rem;margin-bottom:0.75rem">
+  <p style="margin:0 0 0.5rem 0;font-size:0.8rem;color:#3d2e1e;font-style:italic">
+    叙事可以骗人，分位数和拓扑位置不会。
+  </p>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem">
+    <span style="background:#fde8e8;color:#c0392b;font-size:0.65rem;padding:2px 8px;border-radius:10px;font-weight:600">长期 · 制度层</span>
+    <span style="background:#fef3cd;color:#8a6d3b;font-size:0.65rem;padding:2px 8px;border-radius:10px;font-weight:600">中期 · 宏观层</span>
+    <span style="background:#e8f5e9;color:#27ae60;font-size:0.65rem;padding:2px 8px;border-radius:10px;font-weight:600">短期 · 市场层</span>
+    <span style="background:#fff3e0;color:#e67e22;font-size:0.65rem;padding:2px 8px;border-radius:10px;font-weight:600">黄金 · 结果层</span>
+  </div>
+  <p style="margin:0;font-size:0.68rem;color:#7a6a5a">
+    箭头代表传导路径：上游指标变化沿箭头方向影响下游。
+    <span style="color:#c9a000;font-weight:600">标黄节点</span>为已接入数据，可点击查看详情。
+  </p>
+</div>
+
 <div class="topo-wrap">
   <svg id="topo-svg"></svg>
   <div class="topo-instruction">点击节点查看详情 · 拖拽可移动</div>
@@ -390,6 +408,29 @@
     <div class="topo-panel-date" id="panel-date"></div>
     <div class="topo-panel-signal" id="panel-signal"></div>
     <div class="topo-panel-desc" id="panel-desc"></div>
+  </div>
+</div>
+
+<!-- ── Section: 如何阅读这张图 ── -->
+<div style="background:#f8f6f1;border-top:1px solid #e0d8cc;padding:1.25rem 2rem;margin-top:0">
+  <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:0.75rem">如何阅读这张图</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem">
+    <div>
+      <div style="font-size:0.72rem;font-weight:700;color:#c0392b;margin-bottom:0.3rem">长期 · 制度层</div>
+      <div style="font-size:0.68rem;color:#5a4a3a;line-height:1.5">决定黄金价格中枢会不会抬升。主权信用磨损、货币体系碎片化，推动央行和私人部门增加黄金储备。</div>
+    </div>
+    <div>
+      <div style="font-size:0.72rem;font-weight:700;color:#8a6d3b;margin-bottom:0.3rem">中期 · 宏观层</div>
+      <div style="font-size:0.68rem;color:#5a4a3a;line-height:1.5">决定黄金趋势能不能走出来。通胀粘性 × 增长方向 × 美元强弱 × 流动性松紧，四变量组合决定中期方向。</div>
+    </div>
+    <div>
+      <div style="font-size:0.72rem;font-weight:700;color:#27ae60;margin-bottom:0.3rem">短期 · 市场层</div>
+      <div style="font-size:0.68rem;color:#5a4a3a;line-height:1.5">决定黄金短期怎么走。资金流、仓位、波动率和技术动量，影响短期节奏和幅度。</div>
+    </div>
+    <div>
+      <div style="font-size:0.72rem;font-weight:700;color:#e67e22;margin-bottom:0.3rem">黄金 · 结果层</div>
+      <div style="font-size:0.68rem;color:#5a4a3a;line-height:1.5">最终输出。体现为价格中枢移动、趋势强弱、波动率高低和配置价值的变化。</div>
+    </div>
   </div>
 </div>
 
@@ -1105,6 +1146,14 @@
 
 // ─── Topology Graph ──────────────────────────────────────────────────────────
 (function() {
+  // Nodes with available data → jumpable (标黄)
+  const JUMPABLE = new Set([
+    'debt_gdp', 'deficit_gdp', 'interest',
+    'real_rate', 'inflation', 'dxy', 'fci', 'pce', 'unemp',
+    'gld_etf', 'cfct', 'gvz',
+    'price',
+  ]);
+
   const LAYERS = [
     // Layer 4: Institutional
     { id: 'debt_gdp',     label: '债务/GDP',     layer: 4, color: '#e74c3c', desc: '政府杠杆率，过高意味着偿债压力' },
@@ -1202,9 +1251,9 @@
   node.append('circle')
     .attr('r', 22)
     .attr('fill', d => d.color)
-    .attr('fill-opacity', 0.2)
-    .attr('stroke', d => d.color)
-    .attr('stroke-width', 1.5);
+    .attr('fill-opacity', d => JUMPABLE.has(d.id) ? 0.35 : 0.2)
+    .attr('stroke', d => JUMPABLE.has(d.id) ? '#c9a000' : d.color)
+    .attr('stroke-width', d => JUMPABLE.has(d.id) ? 3.0 : 1.5);
 
   node.append('text')
     .attr('text-anchor', 'middle')
@@ -1227,7 +1276,8 @@
 
   // Node hover: highlight this node + connected links + neighbor nodes
   node.on('mouseover', function(event, d) {
-    d3.select(this).select('circle').attr('fill-opacity', 0.7);
+    // Jumpable nodes slightly brighter on hover; non-jumpable stay subtle
+    d3.select(this).select('circle').attr('fill-opacity', d => JUMPABLE.has(d.id) ? 0.7 : 0.35);
 
     // Highlight connected links
     linkSel.each(function(link) {
@@ -1249,7 +1299,7 @@
       d3.select(this).select('circle').attr('fill-opacity', fo);
     });
   }).on('mouseout', function(event, d) {
-    d3.select(this).select('circle').attr('fill-opacity', 0.2);
+    d3.select(this).select('circle').attr('fill-opacity', d => JUMPABLE.has(d.id) ? 0.35 : 0.2);
 
     // Reset all links
     linkSel
@@ -1257,8 +1307,8 @@
       .attr('stroke', '#c8bfb0')
       .attr('stroke-width', 1.0);
 
-    // Reset all nodes
-    node.select('circle').attr('fill-opacity', 0.2);
+    // Reset all nodes to their correct default opacity
+    node.select('circle').attr('fill-opacity', d => JUMPABLE.has(d.id) ? 0.35 : 0.2);
   });
 
   function openPanel(d) {
