@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Investment Indicators Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>RhoZero · Investment Intelligence</title>
   <style>
     :root {
       --bg: #0d1117;
@@ -15,70 +14,196 @@
       --accent: #58a6ff;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-    header { margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
-    h1 { color: var(--accent); }
-    .updated { color: var(--text-muted); font-size: 0.875rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
-    h2 { font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
-    th { color: var(--text-muted); font-weight: 500; }
-    .commentary { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
-    .commentary p { font-size: 1.1rem; }
-    .chart-container { height: 300px; }
-    footer { margin-top: 2rem; text-align: center; color: var(--text-muted); font-size: 0.75rem; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Nav */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+    .nav-brand {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+    .nav-sub { font-size: 0.75rem; color: var(--text-muted); margin-left: 0.75rem; font-weight: 400; }
+
+    /* Hero */
+    .hero {
+      padding: 4rem 2rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-emoji { font-size: 3rem; margin-bottom: 1rem; }
+    .hero h1 { font-size: 2.5rem; color: var(--text); margin-bottom: 0.5rem; font-weight: 700; }
+    .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+
+    /* Section labels */
+    .section-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    /* Main grid */
+    .container { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem;
+      text-decoration: none;
+      color: var(--text);
+      display: block;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      text-decoration: none;
+      color: var(--text);
+    }
+    .card-icon { font-size: 2rem; margin-bottom: 1rem; }
+    .card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--text); }
+    .card p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.5; }
+    .card-tag {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      background: rgba(88, 166, 255, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(88, 166, 255, 0.2);
+    }
+
+    /* Large feature card */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    @media (max-width: 700px) {
+      .feature-grid { grid-template-columns: 1fr; }
+    }
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      text-decoration: none;
+      color: var(--text);
+      display: block;
+      transition: border-color 0.2s;
+    }
+    .feature-card:hover { border-color: var(--accent); text-decoration: none; color: var(--text); }
+    .feature-card .card-icon { font-size: 2.5rem; }
+    .feature-card h3 { font-size: 1.3rem; margin-bottom: 0.75rem; }
+    .feature-card p { font-size: 0.9rem; color: var(--text-muted); }
+    .feature-card .badge {
+      display: inline-block;
+      margin-top: 1rem;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      background: rgba(88, 166, 255, 0.15);
+      color: var(--accent);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      margin-top: 2rem;
+    }
+    footer a { color: var(--text-muted); }
+    footer a:hover { color: var(--accent); }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Investment Indicators</h1>
-      <p class="updated">Last updated: Never</p>
-    </header>
-    
-    <div class="grid">
-      <div class="card">
-        <h2>Current Values</h2>
-        <table>
-          <thead><tr><th>Indicator</th><th>Value</th><th>Date</th></tr></thead>
-          <tbody><tr><td colspan="3">No data</td></tr></tbody>
-        </table>
-      </div>
-      
-      <div class="card">
-        <h2>Charts</h2>
-        <div class="chart-container">
-          <canvas id="mainChart"></canvas>
-        </div>
-      </div>
+
+  <nav>
+    <div>
+      <span class="nav-brand">RhoZero</span>
+      <span class="nav-sub">Investment Intelligence</span>
     </div>
-    
-    <div class="commentary">
-      <h2>AI Commentary</h2>
-      <p>Commentary generation failed. Check data.</p>
+    <div style="font-size: 0.8rem; color: var(--text-muted);">
+      Data by FRED · Updates via GitHub Actions
     </div>
-    
-    <footer>
-      <p>Data sourced from FRED (Federal Reserve Economic Data) | AI commentary generated daily</p>
-    </footer>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-emoji">📊</div>
+    <h1>Investment Intelligence Hub</h1>
+    <p>Macro dashboards, weekly reports, and real-time indicators — built with open data and rendered as clean, fast web pages.</p>
   </div>
-  
-  <script>
-    // Placeholder chart - expand with historical data
-    const ctx = document.getElementById('mainChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: { labels: [], datasets: [] },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: 'top' } },
-        scales: { y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }, x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } } }
-      }
-    });
-  </script>
+
+  <div class="container">
+
+    <!-- Primary reports -->
+    <div class="section-label">Weekly Reports</div>
+    <div class="feature-grid">
+      <a href="dollar-liquidity-weekly-report/" class="feature-card">
+        <div class="card-icon">💵</div>
+        <h3>美元流动性周报</h3>
+        <p>Dollar Liquidity Theory weekly analysis. SOFR · TED Spread · RRP · Net Liquidity · DXY · Yield Curve. 综合 L1–L5 危机评级。</p>
+        <div class="badge">Updated Weekly · v3.1</div>
+      </a>
+      <a href="gold-board/" class="feature-card">
+        <div class="card-icon">🥇</div>
+        <h3>Gold Board</h3>
+        <p>黄金宏观定位面板。US Real Rate · DXY · PCE · M2 · 10Y Yield · 各国央行持仓。利率/流动性视角判断黄金方向。</p>
+        <div class="badge">Live · FRED Data</div>
+      </a>
+    </div>
+
+    <!-- Secondary dashboards -->
+    <div class="section-label">Dashboards</div>
+    <div class="grid">
+      <a href="implementation/" class="card">
+        <div class="card-icon">🛠️</div>
+        <h3>Implementation</h3>
+        <p>Technical documentation and architecture of the RhoZero GitHub Pages system.</p>
+        <div class="card-tag">Docs</div>
+      </a>
+      <a href="demo/gold.html" class="card">
+        <div class="card-icon">🎨</div>
+        <h3>Gold Demo</h3>
+        <p>Prototype demo page for the Gold Board visualization.</p>
+        <div class="card-tag">Demo</div>
+      </a>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>RhoZero · Built with GitHub Pages + GitHub Actions + FRED API</p>
+  </footer>
+
 </body>
 </html>
