@@ -142,6 +142,31 @@ def build_html(data: dict) -> str:
     st = fs.get("sentiment_temperature", {})
     sentiment_val = st.get("value")
     sentiment_label_str = st.get("label") or ""
+
+    # Build risk-temperature rows (four suits breakdown)
+    risk_rows = []
+    suit_defs = [
+        ("① GVZ",  st.get("components", {}).get("gvz"),  "#e74c3c", "期权市场波动率预期"),
+        ("② 均线",  st.get("components", {}).get("ma"),     "#27ae60", "趋势方向与排列状态"),
+        ("③ GLD",  st.get("components", {}).get("gld"),   "#f5c518", "机构配置行为代理"),
+        ("④ CFTC", st.get("components", {}).get("cfct"), "#e67e22", "投机性头寸拥挤度"),
+    ]
+    for name, score, color, desc in suit_defs:
+        if score is not None:
+            fill_c = color if score < 80 else "#e74c3c"
+            risk_rows.append({"name": name, "score": round(score, 1), "color": color,
+                               "fill_color": fill_c, "desc": desc})
+    _rows_html = ''.join(
+        f'<div class="risk-row">'
+        f'<div class="risk-name">{r["name"]}</div>'
+        f'<div class="risk-track">'
+        f'<div class="risk-fill" style="width:{r["score"]}%; background:{r["fill_color"]}"></div>'
+        f'</div>'
+        f'<div class="risk-val" style="color:{r["color"]}">{r["score"]}</div>'
+        f'<div class="risk-desc">{r["desc"]}</div>'
+        f'</div>'
+        for r in risk_rows
+    )
     # Color: hot=red, warm=orange, neutral=yellow, cool=green, cold=blue
     if sentiment_val is not None:
         if sentiment_val > 75:
@@ -403,6 +428,7 @@ def build_html(data: dict) -> str:
     .suit-value {{ font-size: 1.4rem; font-weight: 700; }}
     .suit-sub {{ font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }}
     .suit-signal {{ font-size: 0.8rem; font-weight: 600; margin-top: 0.5rem; }}
+    .suit-exp {{ color: var(--accent) !important; font-size: 0.68rem !important; opacity: 0.8; }}
     .sentiment-bar-wrap {{
       background: var(--card); padding: 1rem 1.5rem;
       border-bottom: 1px solid var(--border);
@@ -413,6 +439,20 @@ def build_html(data: dict) -> str:
     .sentiment-fill {{ height: 100%; border-radius: 4px; transition: width 0.5s ease; }}
     .sentiment-value {{ font-size: 1.1rem; font-weight: 700; min-width: 50px; text-align: right; }}
     .sentiment-tag {{ font-size: 0.8rem; font-weight: 600; min-width: 70px; }}
+    /* ── Risk Temperature Section ── */
+    .risk-temp-wrap {{ background: var(--card); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }}
+    .risk-temp-header {{ padding: 0.9rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; }}
+    .risk-temp-title {{ font-size: 1rem; font-weight: 700; }}
+    .risk-temp-badge {{ background: var(--accent); color: white; font-size: 0.65rem; padding: 0.15rem 0.5rem; border-radius: 20px; font-weight: 600; }}
+    .risk-temp-body {{ padding: 1rem 1.5rem; }}
+    .risk-row {{ display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }}
+    .risk-row:last-child {{ margin-bottom: 0; }}
+    .risk-name {{ font-size: 0.72rem; color: var(--muted); min-width: 90px; text-transform: uppercase; letter-spacing: 0.04em; }}
+    .risk-track {{ flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }}
+    .risk-fill {{ height: 100%; border-radius: 3px; transition: width 0.6s ease; }}
+    .risk-val {{ font-size: 0.8rem; font-weight: 700; min-width: 38px; text-align: right; }}
+    .risk-desc {{ font-size: 0.68rem; color: var(--muted); min-width: 160px; text-align: right; }}
+    @media (max-width: 600px) {{ .risk-desc {{ display: none; }} }}
 
     /* ── Chart ── */
     .chart-wrap {{
@@ -612,7 +652,8 @@ def build_html(data: dict) -> str:
   <div class="suit-card">
     <div class="suit-name">① GVZ 波动率指数</div>
     <div class="suit-value">{fmt(gvz, '', 1) if gvz else '—'}</div>
-    <div class="suit-sub">CBOE黄金期权隐含波动率{gvz_date and ' · ' + gvz_date or ''}</div>
+    <div class="suit-sub">期权市场对未来30天波幅的预期{gvz_date and ' · ' + gvz_date or ''}</div>
+    <div class="suit-sub suit-exp">GVZ飙升往往先于金价大幅波动预警</div>
     <div class="suit-sub" style="color:#888">{gvz_pct and '历史分位: ' + str(gvz_pct) + '%' or '历史分位: 计算中...'}</div>
     <div class="suit-signal" style="color:{gvz_color}">{gvz_signal}</div>
   </div>
@@ -620,6 +661,7 @@ def build_html(data: dict) -> str:
     <div class="suit-name">② 均线系统</div>
     <div class="suit-value">${fmt(gold_cur, '', 0) if gold_cur else '—'}</div>
     <div class="suit-sub">MA20={fmt(ma20,'$',0)} · MA60={fmt(ma60,'$',0)} · MA200={fmt(ma200,'$',0)}</div>
+    <div class="suit-sub suit-exp">均线多头排列=趋势强化；空头排列=趋势转弱</div>
     <div class="suit-sub" style="color:#888">{ma_arrangement in ('bull','bear') and ('✅多头排列' if ma_arrangement=='bull' else '🔻空头排列') or ('混合排列' if ma_arrangement=='mixed' else '')}</div>
     <div class="suit-signal" style="color:{ma_color}">{ma_signal}</div>
   </div>
@@ -627,12 +669,14 @@ def build_html(data: dict) -> str:
     <div class="suit-name">③ GLD ETF 持仓</div>
     <div class="suit-value">{fmt(fs.get('gld_etf',{}).get('shares'),'M',1) if fs.get('gld_etf',{}).get('shares') else '—'}</div>
     <div class="suit-sub">{fs.get('gld_etf',{}).get('unit','')}{f" · {fs.get('gld_etf',{}).get('percentile'):.0f}分位" if fs.get('gld_etf',{}).get('percentile') else ''}</div>
-    <div class="suit-signal" style="color:var(--muted)">持仓量历史分位</div>
+    <div class="suit-sub suit-exp">ETF持仓变化确认趋势方向</div>
+    <div class="suit-signal" style="color:var(--muted)">机构配置行为代理</div>
   </div>
   <div class="suit-card">
     <div class="suit-name">④ CFTC 净多头</div>
     <div class="suit-value">{f"{fs.get('cfct',{}).get('net_long'):,.0f}" if fs.get('cfct',{}).get('net_long') is not None else '—'}</div>
     <div class="suit-sub">COT 周度持仓报告{ f" · {fs.get('cfct',{}).get('week','')}" if fs.get('cfct',{}).get('week') else ''}</div>
+    <div class="suit-sub suit-exp">极度拥挤区间预示短期回调风险</div>
     <div class="suit-sub" style="color:#888">{cfct_pct is not None and '历史分位: ' + str(cfct_pct) + '%' or ''}</div>
     <div class="suit-signal" style="color:{cfct_color}">{cfct_signal}</div>
   </div>
@@ -647,6 +691,16 @@ def build_html(data: dict) -> str:
   <div class="sentiment-value" style="color:{sentiment_color}">{str(sentiment_val) if sentiment_val is not None else '—'}</div>
   <div class="sentiment-tag" style="color:{sentiment_color}">{sentiment_label_str}</div>
 </div>
+
+<!-- ── Section: 风险温度 ── -->
+<div class="section-header">
+  <div class="section-title">风险温度 · 四件套综合读数</div>
+  <div class="section-badge">市场层</div>
+</div>
+<div class="risk-temp-wrap">
+  <div class="risk-temp-body">
+    {_rows_html}
+  </div>
 
 <!-- ── Section: 金价走势图 ── -->
 <div class="section-header">
@@ -1338,16 +1392,18 @@ def build_html(data: dict) -> str:
   }}
 
   // Draw links
-  svg.append('g').selectAll('line')
+  const linkSel = svg.append('g')
+    .selectAll('line')
     .data(links)
     .join('line')
+    .attr('class', d => 'topo-link topo-link-' + d.source)
     .attr('x1', d => nodes.find(n => n.id === d.source).x)
     .attr('y1', d => nodes.find(n => n.id === d.source).y)
     .attr('x2', d => nodes.find(n => n.id === d.target).x)
     .attr('y2', d => nodes.find(n => n.id === d.target).y)
-    .attr('stroke', '#d5cdc2')
-    .attr('stroke-width', 0.8)
-    .attr('stroke-opacity', 0.5);
+    .attr('stroke', '#c8bfb0')
+    .attr('stroke-width', 1.0)
+    .attr('stroke-opacity', 0.35);
 
   // Draw layer labels
   const layerNames = ['', '结果层', '市场层', '宏观层', '制度层'];
@@ -1396,11 +1452,40 @@ def build_html(data: dict) -> str:
       }}
     }});
 
-  // Node hover effect
+  // Node hover: highlight this node + connected links + neighbor nodes
   node.on('mouseover', function(event, d) {{
-    d3.select(this).select('circle').attr('fill-opacity', 0.4);
+    d3.select(this).select('circle').attr('fill-opacity', 0.7);
+
+    // Highlight connected links
+    linkSel.each(function(link) {{
+      var conn = link.source === d.id || link.target === d.id;
+      var op = conn ? 0.9 : 0.1;
+      var sc = conn ? d.color : '#c8bfb0';
+      var sw = conn ? 1.8 : 0.8;
+      d3.select(this).attr('stroke-opacity', op).attr('stroke', sc).attr('stroke-width', sw);
+    }});
+
+    // Dim unconnected nodes
+    node.each(function(n) {{
+      if (n === d) return;
+      const connected = links.some(l =>
+        (l.source === d.id && l.target === n.id) ||
+        (l.target === d.id && l.source === n.id)
+      );
+      var fo = connected ? 0.6 : 0.05;
+      d3.select(this).select('circle').attr('fill-opacity', fo);
+    }});
   }}).on('mouseout', function(event, d) {{
     d3.select(this).select('circle').attr('fill-opacity', 0.2);
+
+    // Reset all links
+    linkSel
+      .attr('stroke-opacity', 0.35)
+      .attr('stroke', '#c8bfb0')
+      .attr('stroke-width', 1.0);
+
+    // Reset all nodes
+    node.select('circle').attr('fill-opacity', 0.2);
   }});
 
   function openPanel(d) {{
