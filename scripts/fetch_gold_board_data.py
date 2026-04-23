@@ -295,56 +295,63 @@ def percentile(value: float, history: list) -> float:
 def fetch_cftc_cot() -> dict:
     """
     Fetch CFTC Disaggregated Report for Gold (GC).
-    Returns {net_long (contracts), week} or None on failure.
-    Data source: CFTC historical compressed files (fut_disagg_txt_{YEAR}.zip).
+    Returns {net_long, week, percentile} or None on failure.
     Gold commodity code = 088, Managed Money columns 13 (Long) and 14 (Short).
+    Percentile: where current net_long ranks vs last 3 years of weekly data.
     """
-    import io, zipfile, re
-    from datetime import datetime
-    # Use current year for most recent report
-    year = datetime.now().year
-    url = f"https://www.cftc.gov/files/dea/history/fut_disagg_txt_{year}.zip"
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=30) as r:
-            content = r.read()
-        z = zipfile.ZipFile(io.BytesIO(content))
-        with z.open("f_year.txt") as f:
-            data = f.read().decode("latin-1", errors="replace")
-        lines = data.splitlines()
-        # Header: col 0=Market_Name, col 2=Report_Date, col 6=Commodity_Code,
-        # col 13=M_Money_Long_All, col 14=M_Money_Short_All
-        latest_gold = None
-        for line in lines[1:]:
-            cols = line.split(",")
-            if len(cols) <= 14:
-                continue
-            code = cols[6].strip()
-            if code != "088":
-                continue
-            # Found gold row
-            try:
-                mm_long = int(float(cols[13].strip()))
-                mm_short = int(float(cols[14].strip()))
-                net_long = mm_long - mm_short
-                date_str = cols[2].strip().strip('"')
-                latest_gold = {
-                    "net_long": net_long,
-                    "week": date_str,
-                    "mm_long": mm_long,
-                    "mm_short": mm_short,
-                }
-                # This is already the most recent (file sorted desc by date)
-                break
-            except (ValueError, IndexError):
-                continue
-        if latest_gold is None:
-            print(f"    [WARN] CFTC: Gold (088) row not found in f_year.txt")
-            return None
-        return latest_gold
-    except Exception as e:
-        print(f"    [WARN] CFTC COT fetch failed: {e}")
-    return None
+    import io, zipfile
+    from datetime import datetime, timedelta
+    cutoff = (datetime.now() - timedelta(days=3*365)).strftime("%Y-%m-%d")
+    all_net_long = []
+    latest = None
+    years_to_try = [datetime.now().year, datetime.now().year - 1, datetime.now().year - 2]
+    successful_years = 0
+    for yr in years_to_try:
+        url = f"https://www.cftc.gov/files/dea/history/fut_disagg_txt_{yr}.zip"
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                content = r.read()
+            z = zipfile.ZipFile(io.BytesIO(content))
+            with z.open("f_year.txt") as f:
+                data = f.read().decode("latin-1", errors="replace")
+            lines = data.splitlines()
+            found = 0
+            for line in lines[1:]:
+                cols = line.split(",")
+                if len(cols) <= 14 or cols[6].strip() != "088":
+                    continue
+                try:
+                    date_str = cols[2].strip().strip('"')
+                    mm_long = int(float(cols[13].strip()))
+                    mm_short = int(float(cols[14].strip()))
+                    net_long = mm_long - mm_short
+                    if date_str >= cutoff:
+                        all_net_long.append(net_long)
+                        found += 1
+                    if latest is None or date_str > latest["week"]:
+                        latest = {"net_long": net_long, "week": date_str,
+                                  "mm_long": mm_long, "mm_short": mm_short}
+                except (ValueError, IndexError):
+                    continue
+            successful_years += 1
+            print(f"    CFTC {yr}: {found} rows in range, total={len(all_net_long)}, latest={latest['week'] if latest else 'none'}")
+        except Exception as e:
+            print(f"    [WARN] CFTC {yr} failed: {e}")
+    if latest is None:
+        print(f"    [WARN] CFTC: no data retrieved from any year")
+        return None
+    # Percentile
+    if all_net_long and len(all_net_long) >= 10:
+        current = latest["net_long"]
+        below = sum(1 for v in all_net_long if v < current)
+        pct = round(below / len(all_net_long) * 100, 1)
+        print(f"    CFTC percentile: {pct}% (n={len(all_net_long)}, {successful_years} years)")
+    else:
+        pct = None
+        print(f"    CFTC percentile: insufficient history ({len(all_net_long)} rows)")
+    latest["percentile"] = pct
+    return latest
 
 
 def fetch_sge_premium() -> dict:
@@ -608,6 +615,20 @@ def main():
     if cftc_data:
         print(f"    CFTC net long: {cftc_data.get('net_long')} ({cftc_data.get('week')})")
 
+    # MA arrangement: bull (MA20>MA60>MA200), bear (MA20<MA60<MA200), mixed, or insufficient
+    ma_arrangement = "neutral"
+    m20 = ma20[-1] if ma20 else None
+    m60 = ma60[-1] if ma60 else None
+    m200 = ma200[-1] if ma200 else None
+    if m20 and m60 and m200:
+        if m20 > m60 > m200:
+            ma_arrangement = "bull"
+        elif m20 < m60 < m200:
+            ma_arrangement = "bear"
+        else:
+            ma_arrangement = "mixed"
+    print(f"    MA arrangement: {ma_arrangement} (MA20={m20}, MA60={m60}, MA200={m200})")
+
     result["four_suits"] = {
         "gvz": {
             "value": gvz_val,
@@ -617,7 +638,13 @@ def main():
             "signal": "neutral",
             "history": gvz_hist,
         },
-        "ma_system": {"value": gold_cur, "ma20": ma20[-1] if ma20 else None, "ma60": ma60[-1] if ma60 else None, "ma200": ma200[-1] if ma200 else None},
+        "ma_system": {
+            "value": gold_cur,
+            "ma20": ma20[-1] if ma20 else None,
+            "ma60": ma60[-1] if ma60 else None,
+            "ma200": ma200[-1] if ma200 else None,
+            "arrangement": ma_arrangement,
+        },
         "gld_etf": {
             "shares": gld_flow.get("shares"),
             "percentile": gld_flow.get("percentile"),

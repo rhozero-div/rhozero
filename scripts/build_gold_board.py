@@ -87,16 +87,26 @@ def build_html(data: dict) -> str:
     ma20 = ma_sys.get("ma20")
     ma60 = ma_sys.get("ma60")
     ma200 = ma_sys.get("ma200")
+    ma_arrangement = ma_sys.get("arrangement", "neutral")
 
-    # MA signal
+    # MA signal: combine ratio vs MA200 + arrangement
     if gold_cur and ma200:
         ratio = gold_cur / ma200
-        if ratio > 1.15:
+        if ratio > 1.15 and ma_arrangement == "bull":
+            ma_signal = "📈 强势趋势"
+            ma_color = MA_COLOR["up"]
+        elif ratio > 1.0 and ma_arrangement == "bull":
+            ma_signal = "↗️ 多头排列"
+            ma_color = MA_COLOR["up"]
+        elif ratio > 1.15:
             ma_signal = "📈 强势偏离"
             ma_color = MA_COLOR["up"]
         elif ratio > 1.0:
             ma_signal = "↗️ 偏强"
             ma_color = MA_COLOR["up"]
+        elif ratio < 0.9 and ma_arrangement == "bear":
+            ma_signal = "📉 空头排列"
+            ma_color = MA_COLOR["down"]
         elif ratio < 0.9:
             ma_signal = "📉 弱势偏离"
             ma_color = MA_COLOR["down"]
@@ -106,6 +116,27 @@ def build_html(data: dict) -> str:
     else:
         ma_signal = "—"
         ma_color = MA_COLOR["neutral"]
+
+    # CFTC crowding signal based on 3yr percentile
+    cfct_data = fs.get("cfct", {})
+    cfct_net = cfct_data.get("net_long")
+    cfct_pct = cfct_data.get("percentile")
+    if cfct_net is not None and cfct_pct is not None:
+        if cfct_pct >= 80:
+            cfct_signal = "⚠️ 极度拥挤"
+            cfct_color = "#e74c3c"
+        elif cfct_pct >= 60:
+            cfct_signal = "拥挤"
+            cfct_color = "#d29922"
+        elif cfct_pct <= 20:
+            cfct_signal = "空头平仓区"
+            cfct_color = "#27ae60"
+        else:
+            cfct_signal = "中性"
+            cfct_color = MA_COLOR["neutral"]
+    else:
+        cfct_signal = "—"
+        cfct_color = MA_COLOR["neutral"]
 
     # GVZ signal
     if gvz:
@@ -554,6 +585,7 @@ def build_html(data: dict) -> str:
     <div class="suit-name">② 均线系统</div>
     <div class="suit-value">${fmt(gold_cur, '', 0) if gold_cur else '—'}</div>
     <div class="suit-sub">MA20={fmt(ma20,'$',0)} · MA60={fmt(ma60,'$',0)} · MA200={fmt(ma200,'$',0)}</div>
+    <div class="suit-sub" style="color:#888">{ma_arrangement in ('bull','bear') and ('✅多头排列' if ma_arrangement=='bull' else '🔻空头排列') or ('混合排列' if ma_arrangement=='mixed' else '')}</div>
     <div class="suit-signal" style="color:{ma_color}">{ma_signal}</div>
   </div>
   <div class="suit-card">
@@ -566,7 +598,8 @@ def build_html(data: dict) -> str:
     <div class="suit-name">④ CFTC 净多头</div>
     <div class="suit-value">{f"{fs.get('cfct',{}).get('net_long'):,.0f}" if fs.get('cfct',{}).get('net_long') is not None else '—'}</div>
     <div class="suit-sub">COT 周度持仓报告{ f" · {fs.get('cfct',{}).get('week','')}" if fs.get('cfct',{}).get('week') else ''}</div>
-    <div class="suit-signal" style="color:var(--muted)">{fs.get('cfct',{}).get('note','') if not fs.get('cfct',{}).get('net_long') else 'Managed Money净多头'}</div>
+    <div class="suit-sub" style="color:#888">{cfct_pct is not None and '历史分位: ' + str(cfct_pct) + '%' or ''}</div>
+    <div class="suit-signal" style="color:{cfct_color}">{cfct_signal}</div>
   </div>
 </div>
 
