@@ -1185,7 +1185,71 @@
     document.getElementById('panel-signal').textContent = '';
     document.getElementById('panel-value').textContent = '';
     document.getElementById('panel-date').textContent = '';
+
+    // ── Value lookup by node id ──────────────────────────────────────────
+    const v4 = rawData.fiscal_index || {};
+    const v3 = (rawData.layers && rawData.layers['3_macro']) || {};
+    const v2 = rawData.four_suits || {};
+    const v1 = rawData;
+
+    const valMap = {
+      'debt_gdp':    { val: v4.debt_gdp_raw,            fmt: v => v != null ? v.toFixed(1) + '%' : '—', date: v4.debt_gdp_date },
+      'deficit_gdp': { val: v4.deficit_gdp_raw,         fmt: v => v != null ? v.toFixed(1) + '%' : '—', date: v4.deficit_gdp_date },
+      'interest':    { val: rawData.interest_burden,     fmt: v => v != null ? v.toFixed(1) + '%' : '—', date: null },
+      'cb_gold':     { val: null,                        fmt: () => '季度数据',                          date: null },
+      'usd_reserve': { val: null,                        fmt: () => 'IMF COFER',                          date: null },
+      'real_rate':   { val: v3.real_rate,                fmt: v => v != null ? v.toFixed(2) + '%' : '—', date: v3.real_rate_date },
+      'inflation':   { val: v3.inflation_exp,            fmt: v => v != null ? v.toFixed(2) + '%' : '—', date: v3.inflation_exp_date },
+      'dxy':         { val: v3.dxy,                      fmt: v => v != null ? v.toFixed(1) : '—',       date: v3.dxy_date },
+      'fci':         { val: v3.financial_cond,           fmt: v => v != null ? v.toFixed(3) : '—',       date: v3.financial_cond_date },
+      'pce':         { val: v3.pce_yoy,                 fmt: v => v != null ? v.toFixed(1) + '%' : '—', date: v3.pce_yoy_date },
+      'unemp':       { val: v3.unemployment,             fmt: v => v != null ? v.toFixed(1) + '%' : '—', date: v3.unemployment_date },
+      'gld_etf':     { val: v2.gld_etf && v2.gld_etf.shares, fmt: v => v != null ? v.toFixed(1) + 'M' : '—', date: null },
+      'cfct':        { val: v2.cfct && v2.cfct.net_long, fmt: v => v != null ? v.toLocaleString() : '—', date: v2.cfct && v2.cfct.week },
+      'gvz':         { val: v2.gvz && v2.gvz.value,     fmt: v => v != null ? v.toFixed(1) : '—',       date: null },
+      'momentum':    { val: v2.ma_system && v2.ma_system.value, fmt: v => v != null ? '$' + v.toFixed(0) : '—', date: null },
+      'price':       { val: v1.gold_price && v1.gold_price.current, fmt: v => v != null ? '$' + v.toFixed(2) : '—', date: null },
+      'trend':       { val: v2.ma_system && v2.ma_system.value, fmt: v => v != null ? '$' + v.toFixed(0) : '—', date: null },
+      'vol':         { val: null,                        fmt: () => '—',                                  date: null },
+      'alloc':       { val: null,                        fmt: () => '框架评估',                           date: null },
+      'insurance':   { val: null,                        fmt: () => '定性指标',                            date: null },
+    };
+
+    const info = valMap[d.id] || { val: null, fmt: () => '—', date: null };
+    document.getElementById('panel-value').textContent = info.fmt(info.val);
+    if (info.date) {
+      document.getElementById('panel-date').textContent = '更新: ' + info.date;
+    }
+
+    // Signal coloring
+    const signalEl = document.getElementById('panel-signal');
+    const sig = getSignal(d.id, info.val);
+    if (sig) {
+      signalEl.textContent = sig.label;
+      signalEl.style.color = sig.color;
+    }
+
     panel.classList.add('show');
+  }
+
+  // ── Signal interpretation ─────────────────────────────────────────────────
+  function getSignal(id, val) {
+    if (val == null) return null;
+    const signals = {
+      'debt_gdp':    { lo: 60,  hi: 100, label: v => v > 100 ? '高杠杆' : v > 80 ? '中高' : '中等' },
+      'deficit_gdp': { lo: 3,   hi: 7,   label: v => v > 5 ? '高赤字' : v > 3 ? '中等' : '可控' },
+      'interest':    { lo: 10,  hi: 20,  label: v => v > 15 ? '高利息负担' : v > 10 ? '中等' : '可控' },
+      'real_rate':   { lo: 0,   hi: 2,   label: v => v < 0 ? '负实际利率→黄金利好' : v < 1 ? '低实际利率' : '正常' },
+      'dxy':         { lo: 90,  hi: 115, label: v => v > 110 ? '强势美元' : v > 100 ? '中等' : '偏弱' },
+      'gvz':         { lo: 15,  hi: 25,  label: v => v > 25 ? '高波动' : v > 15 ? '中等' : '低波动' },
+    };
+    const s = signals[id];
+    if (!s) return null;
+    const v = typeof val === 'number' ? val : parseFloat(val);
+    if (isNaN(v)) return null;
+    const color = v > s.hi ? '#e74c3c' : v < s.lo ? '#27ae60' : '#f39c12';
+    const label = s.label(v);
+    return { color, label };
   }
 
   window.closePanel = function() {
