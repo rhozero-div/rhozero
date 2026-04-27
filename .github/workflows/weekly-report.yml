@@ -40,6 +40,10 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add -A
-          git diff --staged --quiet || git commit -m "Weekly report $(date -u +'%Y-%m-%d')"
-          git push
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add -A
+            git commit -m "Weekly report $(date -u +'%Y-%m-%d')"
+            git push
+          fi
