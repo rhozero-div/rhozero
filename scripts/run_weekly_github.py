@@ -26,7 +26,7 @@ OUT_PNG_DIR   = REPORT_BASE / "charts"   # shared across all reports
 OUT_PNG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── matplotlib sans-serif ─────────────────────────────────────────────────────
-plt.rcParams["font.family"] = ["DejaVu Sans", "Arial", "sans-serif"]
+plt.rcParams["font.family"] = ["DejaVu Sans", "sans-serif"]
 plt.rcParams["axes.unicode_minus"] = False
 
 # ── Load data ─────────────────────────────────────────────────────────────────
