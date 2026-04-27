@@ -527,61 +527,8 @@ html = f'''<!DOCTYPE html>
 </body>
 </html>'''
 
-html_path = REPORT_BASE / f"{DATE_STR}.html"
+html_path = REPORT_BASE / "index.html"
 html_path.write_text(html, encoding="utf-8")
-print(f"  ✓ HTML saved: {html_path.name}")
-
-# Also generate index listing
-index_html = f'''<!DOCTYPE html>
-<html lang="zh">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>美元流动性周报</title>
-  <style>
-    :root { --bg: #f5f0e8; --card: #faf7f2; --border: #e0d8cc; --text: #2a2520; --text-muted: #8a7d72; --accent: #8B5A2B; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-    .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
-    header { margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
-    h1 { color: var(--accent); font-size: 1.75rem; margin-bottom: 0.5rem; }
-    .subtitle { color: var(--text-muted); font-size: 0.9rem; }
-    .back { margin-bottom: 1.5rem; }
-    .back a { color: var(--accent); text-decoration: none; font-size: 0.875rem; }
-    .back a:hover { text-decoration: underline; }
-    .report-list { display: flex; flex-direction: column; gap: 1rem; }
-    .report-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem 1.5rem; transition: border-color 0.2s; }
-    .report-card:hover { border-color: var(--accent); }
-    .report-card a { text-decoration: none; color: var(--text); display: block; }
-    .report-date { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
-    .report-meta { font-size: 0.8rem; color: var(--text-muted); }
-    footer { margin-top: 3rem; text-align: center; color: var(--text-muted); font-size: 0.75rem; border-top: 1px solid var(--border); padding-top: 1rem; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="back"><a href="../">← 返回首页</a></div>
-    <header>
-      <h1>美元流动性周度分析</h1>
-      <p class="subtitle">Dollar Liquidity Weekly Report · Framework v3.1</p>
-    </header>
-    <div class="report-list">
-      <div class="report-card">
-        <a href="{DATE_STR}.html">
-          <div class="report-date">2026-W{WEEK_NUM} · {datetime.now().strftime('%Y年%m月%d日')} <span style="color:var(--accent)">L{r_overall} {L_NAMES[r_overall]}</span></div>
-          <div class="report-meta">综合评级 L{r_overall} | SOFR-DFF: {sofr_dff_bp:.1f}bp (L{r_sofr}) | 净流动性: ${nl_curr/1e6:.2f}T (L{r_nl})</div>
-        </a>
-      </div>
-    </div>
-    <footer>
-      <p>数据来源：FRED | 框架：Dollar Liquidity Theory v3.1</p>
-    </footer>
-  </div>
-</body>
-</html>'''
-
-index_path = REPORT_BASE / "index.html"
-index_path.write_text(index_html, encoding="utf-8")
-print(f"  ✓ Index saved")
+print(f"  ✓ HTML saved: index.html")
 
 print(f"\n[DONE] Weekly report generated: {DATE_STR}")
