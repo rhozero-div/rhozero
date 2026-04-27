@@ -481,35 +481,35 @@ html = f'''<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>美元流动性周度分析 {report_display_date}</title>
   <style>
-    :root {{
-      --bg: #0d1117; --card: #161b22; --border: #30363d;
-      --text: #e6edf3; --text-muted: #8b949e; --accent: #58a6ff;
+    :root {
+      --bg: #f5f0e8; --card: #faf7f2; --border: #e0d8cc;
+      --text: #2a2520; --text-muted: #8a7d72; --accent: #8B5A2B;
       --l1: #3fb950; --l2: #d29922; --l3: #f0883e; --l4: #f85149; --l5: #da3633;
-    }}
-    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }}
-    .container {{ max-width: 1100px; margin: 0 auto; padding: 2rem; }}
-    header {{ margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }}
-    h1 {{ font-size: 1.75rem; color: var(--accent); margin-bottom: 0.5rem; }}
-    h2 {{ font-size: 1.25rem; color: var(--text); margin: 1.5rem 0 0.75rem; border-left: 3px solid var(--accent); padding-left: 0.75rem; }}
-    h3 {{ font-size: 1rem; color: var(--text-muted); margin: 1rem 0 0.5rem; }}
-    p {{ margin-bottom: 0.75rem; }}
-    .report-table {{ width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.9rem; }}
-    .report-table th {{ background: var(--card); color: var(--text-muted); padding: 0.6rem 0.75rem; text-align: left; border: 1px solid var(--border); font-weight: 500; }}
-    .report-table td {{ padding: 0.5rem 0.75rem; border: 1px solid var(--border); vertical-align: top; }}
-    .report-table tr:hover td {{ background: rgba(88,166,255,0.05); }}
-    figure {{ margin: 1rem 0; text-align: center; }}
-    figure img {{ max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border); }}
-    figcaption {{ font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }}
-    footer {{ margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.75rem; }}
-    .nav {{ margin-bottom: 1.5rem; }}
-    .nav a {{ color: var(--accent); text-decoration: none; font-size: 0.875rem; }}
-    .nav a:hover {{ text-decoration: underline; }}
-    .rating-L1 {{ color: var(--l1); font-weight: bold; }}
-    .rating-L2 {{ color: var(--l2); font-weight: bold; }}
-    .rating-L3 {{ color: var(--l3); font-weight: bold; }}
-    .rating-L4 {{ color: var(--l4); font-weight: bold; }}
-    .rating-L5 {{ color: var(--l5); font-weight: bold; }}
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    header { margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    h1 { color: var(--accent); font-size: 1.75rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.25rem; color: var(--text); margin: 1.5rem 0 0.75rem; border-left: 3px solid var(--accent); padding-left: 0.75rem; }
+    h3 { font-size: 1rem; color: var(--text-muted); margin: 1rem 0 0.5rem; }
+    p { margin-bottom: 0.75rem; }
+    .report-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.9rem; }
+    .report-table th { background: var(--card); color: var(--text-muted); padding: 0.6rem 0.75rem; text-align: left; border: 1px solid var(--border); font-weight: 500; }
+    .report-table td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); vertical-align: top; }
+    .report-table tr:hover td { background: rgba(139, 90, 43, 0.05); }
+    figure { margin: 1rem 0; text-align: center; }
+    figure img { max-width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border); }
+    figcaption { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }
+    footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.75rem; }
+    .nav { margin-bottom: 1.5rem; }
+    .nav a { color: var(--accent); text-decoration: none; font-size: 0.875rem; }
+    .nav a:hover { text-decoration: underline; }
+    .rating-L1 { color: var(--l1); font-weight: bold; }
+    .rating-L2 { color: var(--l2); font-weight: bold; }
+    .rating-L3 { color: var(--l3); font-weight: bold; }
+    .rating-L4 { color: var(--l4); font-weight: bold; }
+    .rating-L5 { color: var(--l5); font-weight: bold; }
   </style>
 </head>
 <body>
@@ -539,23 +539,23 @@ index_html = f'''<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>美元流动性周报</title>
   <style>
-    :root {{ --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #e6edf3; --text-muted: #8b949e; --accent: #58a6ff; }}
-    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }}
-    .container {{ max-width: 900px; margin: 0 auto; padding: 2rem; }}
-    header {{ margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }}
-    h1 {{ color: var(--accent); font-size: 1.75rem; margin-bottom: 0.5rem; }}
-    .subtitle {{ color: var(--text-muted); font-size: 0.9rem; }}
-    .back {{ margin-bottom: 1.5rem; }}
-    .back a {{ color: var(--accent); text-decoration: none; font-size: 0.875rem; }}
-    .back a:hover {{ text-decoration: underline; }}
-    .report-list {{ display: flex; flex-direction: column; gap: 1rem; }}
-    .report-card {{ background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem 1.5rem; transition: border-color 0.2s; }}
-    .report-card:hover {{ border-color: var(--accent); }}
-    .report-card a {{ text-decoration: none; color: var(--text); display: block; }}
-    .report-date {{ font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }}
-    .report-meta {{ font-size: 0.8rem; color: var(--text-muted); }}
-    footer {{ margin-top: 3rem; text-align: center; color: var(--text-muted); font-size: 0.75rem; border-top: 1px solid var(--border); padding-top: 1rem; }}
+    :root { --bg: #f5f0e8; --card: #faf7f2; --border: #e0d8cc; --text: #2a2520; --text-muted: #8a7d72; --accent: #8B5A2B; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+    header { margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    h1 { color: var(--accent); font-size: 1.75rem; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--text-muted); font-size: 0.9rem; }
+    .back { margin-bottom: 1.5rem; }
+    .back a { color: var(--accent); text-decoration: none; font-size: 0.875rem; }
+    .back a:hover { text-decoration: underline; }
+    .report-list { display: flex; flex-direction: column; gap: 1rem; }
+    .report-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem 1.5rem; transition: border-color 0.2s; }
+    .report-card:hover { border-color: var(--accent); }
+    .report-card a { text-decoration: none; color: var(--text); display: block; }
+    .report-date { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .report-meta { font-size: 0.8rem; color: var(--text-muted); }
+    footer { margin-top: 3rem; text-align: center; color: var(--text-muted); font-size: 0.75rem; border-top: 1px solid var(--border); padding-top: 1rem; }
   </style>
 </head>
 <body>
